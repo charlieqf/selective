@@ -33,6 +33,9 @@ def create_app(config_name=None):
     jwt.init_app(app)
     ma.init_app(app)
     
+    # 导入模型以确保Flask-Migrate能检测到
+    from app import models
+    
     # 配置CORS
     CORS(app, resources={
         r"/api/*": {
@@ -42,9 +45,11 @@ def create_app(config_name=None):
         }
     })
     
-    # 注册蓝图（暂时注释，后续添加）
-    # from app.routes import auth, questions
-    # app.register_blueprint(auth.bp)
+    # 注册蓝图
+    from app.routes import auth
+    app.register_blueprint(auth.bp)
+    
+    # from app.routes import questions
     # app.register_blueprint(questions.bp)
     
     # 健康检查路由

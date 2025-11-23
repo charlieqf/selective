@@ -46,11 +46,10 @@ def create_app(config_name=None):
     })
     
     # 注册蓝图
-    from app.routes import auth
+    from app.routes import auth, questions, upload
     app.register_blueprint(auth.bp)
-    
-    # from app.routes import questions
-    # app.register_blueprint(questions.bp)
+    app.register_blueprint(questions.bp)
+    app.register_blueprint(upload.bp)
     
     # 健康检查路由
     @app.route('/health')

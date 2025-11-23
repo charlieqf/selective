@@ -7,7 +7,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     // 初始化时安全地读取localStorage
     if (typeof window !== 'undefined') {
-        token.value = localStorage.getItem('token')
+        token.value = localStorage.getItem('access_token')
     }
 
     const isAuthenticated = computed(() => !!token.value)
@@ -16,7 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = userData
         token.value = authToken
         if (typeof window !== 'undefined') {
-            localStorage.setItem('token', authToken)
+            localStorage.setItem('access_token', authToken)
         }
     }
 
@@ -24,7 +24,7 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = null
         token.value = null
         if (typeof window !== 'undefined') {
-            localStorage.removeItem('token')
+            localStorage.removeItem('access_token')
         }
     }
 

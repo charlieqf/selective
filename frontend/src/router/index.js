@@ -5,20 +5,47 @@ const router = createRouter({
     routes: [
         {
             path: '/',
-            name: 'home',
-            component: () => import('../views/HomeView.vue')
+            redirect: '/dashboard'
         },
         {
             path: '/login',
-            name: 'login',
+            name: 'Login',
             component: () => import('../views/LoginView.vue')
         },
         {
             path: '/register',
-            name: 'register',
+            name: 'Register',
             component: () => import('../views/RegisterView.vue')
+        },
+        {
+            path: '/dashboard',
+            name: 'Dashboard',
+            component: () => import('../views/dashboard/DashboardView.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/questions',
+            name: 'QuestionList',
+            component: () => import('../views/questions/QuestionList.vue'),
+            meta: { requiresAuth: true }
+        },
+        {
+            path: '/questions/upload',
+            name: 'QuestionUpload',
+            component: () => import('../views/questions/QuestionUpload.vue'),
+            meta: { requiresAuth: true }
         }
     ]
+})
+
+// 路由守卫
+router.beforeEach((to, from, next) => {
+    const token = localStorage.getItem('access_token')
+    if (to.meta.requiresAuth && !token) {
+        next('/login')
+    } else {
+        next()
+    }
 })
 
 export default router

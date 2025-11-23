@@ -14,10 +14,10 @@ class Question(db.Model):
     status = db.Column(db.String(20), default='UNANSWERED')  # UNANSWERED, ANSWERED, MASTERED, NEED_REVIEW
     
     # 内容字段 (JSON存储)
-    # 存储图片URL列表: ["url1", "url2"]
+    # 存储图片对象列表: [{"url": "...", "public_id": "..."}]
     # MySQL 8.0+ 支持 JSON 类型，SQLite 也支持（通过扩展或文本）
     # SQLAlchemy 的 JSON 类型会自动处理序列化/反序列化
-    image_urls = db.Column(db.JSON)  
+    images = db.Column(db.JSON)  
     # 存储题目描述/OCR文本
     content_text = db.Column(db.Text)
     
@@ -36,13 +36,13 @@ class Question(db.Model):
         db.CheckConstraint("status IN ('UNANSWERED', 'ANSWERED', 'MASTERED', 'NEED_REVIEW')", name='check_status_valid'),
     )
     
-    def set_images(self, urls):
+    def set_images(self, images_list):
         # SQLAlchemy JSON类型自动处理列表，无需手动json.dumps
-        self.image_urls = urls
+        self.images = images_list
         
     def get_images(self):
         # SQLAlchemy JSON类型自动返回列表，无需手动json.loads
-        return self.image_urls if self.image_urls else []
+        return self.images if self.images else []
     
     def to_dict(self):
         return {

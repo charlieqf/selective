@@ -13,52 +13,11 @@
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <!-- Image Upload -->
           <div>
-            <label class="block text-sm font-medium text-gray-700">Question Images</label>
-            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"
-                 :class="{'border-red-300': errors.images}">
-              <div class="space-y-1 text-center">
-                <div v-if="uploadedImages.length === 0">
-                  <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  <div class="flex text-sm text-gray-600 justify-center">
-                    <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
-                      <span>Upload a file</span>
-                      <input id="file-upload" name="file-upload" type="file" class="sr-only" @change="handleFileUpload" accept="image/png, image/jpeg, image/webp" :disabled="uploading">
-                    </label>
-                    <p class="pl-1">or drag and drop</p>
-                  </div>
-                  <p class="text-xs text-gray-500">PNG, JPG, WEBP up to 5MB</p>
-                </div>
-                
-                <!-- Image Preview List -->
-                <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                  <div v-for="(img, index) in uploadedImages" :key="img.public_id" class="relative group">
-                    <img :src="img.url" class="h-24 w-full object-cover rounded-md" />
-                    <button 
-                      type="button"
-                      @click="removeImage(index)"
-                      class="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  
-                  <!-- Add more button -->
-                  <div v-if="uploadedImages.length < 5" class="flex items-center justify-center h-24 border-2 border-gray-300 border-dashed rounded-md hover:border-gray-400">
-                    <label for="file-upload-more" class="cursor-pointer w-full h-full flex items-center justify-center">
-                      <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                      </svg>
-                      <input id="file-upload-more" type="file" class="sr-only" @change="handleFileUpload" accept="image/png, image/jpeg, image/webp" :disabled="uploading">
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p v-if="uploading" class="mt-2 text-sm text-gray-500">Uploading...</p>
+            <ImageUploader 
+              v-model="uploadedImages"
+              @update:uploading="uploading = $event"
+              @error="handleUploadError"
+            />
             <p v-if="errors.images" class="mt-2 text-sm text-red-600">{{ errors.images }}</p>
           </div>
 
@@ -162,6 +121,7 @@ import { ref, reactive, onBeforeUnmount } from 'vue'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useQuestionStore } from '@/stores/question'
 import uploadApi from '@/api/upload'
+import ImageUploader from '@/components/ImageUploader.vue'
 
 const router = useRouter()
 const questionStore = useQuestionStore()
@@ -180,58 +140,8 @@ const submitError = ref(null)
 const errors = reactive({})
 const questionSaved = ref(false) // Track if question was successfully saved
 
-const handleFileUpload = async (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-  
-  // Basic validation
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-    alert('Only JPG, PNG and WEBP images are allowed.')
-    return
-  }
-  
-  if (file.size > 5 * 1024 * 1024) {
-    alert('File size must be less than 5MB.')
-    return
-  }
-  
-  if (uploadedImages.value.length >= 5) {
-    alert('Maximum 5 images allowed.')
-    return
-  }
-  
-  uploading.value = true
-  try {
-    const response = await uploadApi.uploadImage(file)
-    uploadedImages.value.push({
-      url: response.data.url,
-      public_id: response.data.public_id
-    })
-    // Clear error if any
-    if (errors.images) delete errors.images
-  } catch (error) {
-    console.error('Upload failed:', error)
-    alert('Failed to upload image. Please try again.')
-  } finally {
-    uploading.value = false
-    // Reset input
-    event.target.value = ''
-  }
-}
-
-const removeImage = async (index) => {
-  const image = uploadedImages.value[index]
-  if (!image) return
-  
-  if (confirm('Are you sure you want to remove this image?')) {
-    try {
-      await uploadApi.deleteImage(image.public_id)
-      uploadedImages.value.splice(index, 1)
-    } catch (error) {
-      console.error('Delete failed:', error)
-      alert('Failed to delete image from server.')
-    }
-  }
+const handleUploadError = (msg) => {
+  alert(msg)
 }
 
 const validate = () => {
@@ -259,6 +169,7 @@ const cleanupImages = async () => {
       console.error('Cleanup failed for image:', img.public_id, e)
     }
   }
+  uploadedImages.value = []
 }
 
 const handleSubmit = async () => {

@@ -1,0 +1,45 @@
+<script setup>
+import { computed } from 'vue'
+
+const props = defineProps({
+  question: { type: Object, required: true }
+})
+
+const emit = defineEmits(['click'])
+
+const firstImage = computed(() => {
+  return props.question.images?.[0]?.url || null
+})
+
+const difficultyStars = computed(() => {
+  return '⭐'.repeat(props.question.difficulty || 0)
+})
+
+const statusColors = {
+  UNANSWERED: 'bg-gray-100 text-gray-700',
+  ANSWERED: 'bg-blue-100 text-blue-700',
+  MASTERED: 'bg-green-100 text-green-700',
+  NEED_REVIEW: 'bg-yellow-100 text-yellow-700'
+}
+</script>
+
+<template>
+  <div class="card cursor-pointer hover:shadow-lg transition-shadow" @click="emit('click', props.question)">
+    <div v-if="firstImage" class="mb-3">
+      <img :src="firstImage" :alt="props.question.title || 'Question'" class="w-full h-48 object-cover rounded-md" />
+    </div>
+    <div class="flex items-start justify-between mb-2">
+      <span class="text-sm font-medium text-primary-600">{{ props.question.subject }}</span>
+      <span class="text-sm">{{ difficultyStars }}</span>
+    </div>
+    <h3 v-if="props.question.title" class="font-semibold mb-2">{{ props.question.title }}</h3>
+    <div class="flex items-center justify-between">
+      <span :class="['text-xs px-2 py-1 rounded', statusColors[props.question.status]]">
+        {{ props.question.status }}
+      </span>
+      <span class="text-xs text-gray-500">
+        {{ new Date(props.question.created_at).toLocaleDateString() }}
+      </span>
+    </div>
+  </div>
+</template>

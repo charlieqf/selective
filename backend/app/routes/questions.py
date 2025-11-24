@@ -16,6 +16,8 @@ def get_questions():
     subject = request.args.get('subject')
     difficulty = request.args.get('difficulty', type=int)
     status = request.args.get('status')
+    sort_by = request.args.get('sort_by', 'created_at')
+    sort_direction = request.args.get('sort_direction', 'desc')
     
     current_user_id = get_jwt_identity()
     
@@ -28,9 +30,17 @@ def get_questions():
         query = query.filter_by(difficulty=difficulty)
     if status:
         query = query.filter_by(status=status)
-        
-    # Order by created_at desc
-    query = query.order_by(Question.created_at.desc())
+    
+    # 添加排序参数
+    allowed_sort_fields = ['created_at', 'difficulty', 'updated_at']
+    if sort_by not in allowed_sort_fields:
+        sort_by = 'created_at'
+    
+    # 应用排序
+    if sort_direction == 'asc':
+        query = query.order_by(getattr(Question, sort_by).asc())
+    else:
+        query = query.order_by(getattr(Question, sort_by).desc())
     
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     

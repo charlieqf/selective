@@ -1,51 +1,9 @@
 import pytest
-from app import create_app, db
 from app.models.user import User
 from app.models.question import Question
 from unittest.mock import patch
+from app import db
 
-@pytest.fixture
-def app():
-    app = create_app('testing')
-    with app.app_context():
-        db.create_all()
-        yield app
-        db.session.remove()
-        db.drop_all()
-
-@pytest.fixture
-def client(app):
-    return app.test_client()
-
-@pytest.fixture
-def auth_headers(client):
-    # Create a user and login
-    user = User(username='testuser', email='test@example.com')
-    user.set_password('password')
-    db.session.add(user)
-    db.session.commit()
-    
-    response = client.post('/api/auth/login', json={
-        'username': 'testuser',
-        'password': 'password'
-    })
-    token = response.json['token']
-    return {'Authorization': f'Bearer {token}'}
-
-@pytest.fixture
-def other_auth_headers(client):
-    # Create another user
-    user = User(username='otheruser', email='other@example.com')
-    user.set_password('password')
-    db.session.add(user)
-    db.session.commit()
-    
-    response = client.post('/api/auth/login', json={
-        'username': 'otheruser',
-        'password': 'password'
-    })
-    token = response.json['token']
-    return {'Authorization': f'Bearer {token}'}
 
 def test_create_question(client, auth_headers):
     data = {
@@ -106,10 +64,67 @@ def test_upload_delete(client, auth_headers):
     with patch('app.routes.upload.cloudinary.uploader.destroy') as mock_destroy:
         mock_destroy.return_value = {'result': 'ok'}
         
-        response = client.delete('/api/upload', json={'public_id': 'img123'}, headers=auth_headers)
+        # 使用正确的public_id格式(包含selective-questions/前缀)
+        response = client.delete('/api/upload', json={'public_id': 'selective-questions/img123'}, headers=auth_headers)
         assert response.status_code == 200
-        mock_destroy.assert_called_with('img123')
+        mock_destroy.assert_called_with('selective-questions/img123')
 
 def test_upload_delete_unauthorized(client):
     response = client.delete('/api/upload', json={'public_id': 'img123'})
     assert response.status_code == 401
+
+def test_get_questions_list(client, auth_headers):
+    # Create multiple questions
+    q1 = Question(title="Q1", subject="MATHS", difficulty=1, author_id=1)
+    q2 = Question(title="Q2", subject="READING", difficulty=2, author_id=1)
+    db.session.add_all([q1, q2])
+    db.session.commit()
+    
+    response = client.get('/api/questions', headers=auth_headers)
+    assert response.status_code == 200
+    data = response.json
+    assert data['total'] == 2
+    assert len(data['questions']) == 2
+
+def test_get_questions_filter(client, auth_headers):
+    q1 = Question(title="Math Q", subject="MATHS", difficulty=1, status="UNANSWERED", author_id=1)
+    q2 = Question(title="Read Q", subject="READING", difficulty=2, status="ANSWERED", author_id=1)
+    db.session.add_all([q1, q2])
+    db.session.commit()
+    
+    # Filter by subject
+    response = client.get('/api/questions?subject=MATHS', headers=auth_headers)
+    assert response.json['total'] == 1
+    assert response.json['questions'][0]['title'] == 'Math Q'
+    
+    # Filter by difficulty
+    response = client.get('/api/questions?difficulty=2', headers=auth_headers)
+    assert response.json['total'] == 1
+    assert response.json['questions'][0]['title'] == 'Read Q'
+    
+    # Filter by status
+    response = client.get('/api/questions?status=ANSWERED', headers=auth_headers)
+    assert response.json['total'] == 1
+    assert response.json['questions'][0]['title'] == 'Read Q'
+
+def test_get_questions_sort(client, auth_headers):
+    q1 = Question(title="Diff 1", difficulty=1, subject="MATHS", author_id=1)
+    q2 = Question(title="Diff 5", difficulty=5, subject="MATHS", author_id=1)
+    q3 = Question(title="Diff 3", difficulty=3, subject="MATHS", author_id=1)
+    db.session.add_all([q1, q2, q3])
+    db.session.commit()
+    
+    # Sort by difficulty ASC
+    response = client.get('/api/questions?sort_by=difficulty&sort_direction=asc', headers=auth_headers)
+    data = response.json['questions']
+    assert data[0]['difficulty'] == 1
+    assert data[1]['difficulty'] == 3
+    assert data[2]['difficulty'] == 5
+    
+    # Sort by difficulty DESC
+    response = client.get('/api/questions?sort_by=difficulty&sort_direction=desc', headers=auth_headers)
+    data = response.json['questions']
+    assert data[0]['difficulty'] == 5
+    assert data[1]['difficulty'] == 3
+    assert data[2]['difficulty'] == 1
+

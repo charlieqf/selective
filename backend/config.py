@@ -98,6 +98,8 @@ class TestingConfig(Config):
     """测试环境配置"""
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    # SQLite不支持pool参数,移除或覆盖
+    SQLALCHEMY_ENGINE_OPTIONS = {}
 
 
 # 配置字典

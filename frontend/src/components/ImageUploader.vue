@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { NUpload, NButton, useMessage } from 'naive-ui'
+import { NUpload, NButton, NIcon, useMessage } from 'naive-ui'
+import { Add } from '@vicons/ionicons5'
 import uploadApi from '../api/upload'
 
 const props = defineProps({
@@ -152,9 +153,12 @@ function updateModelValue() {
       :before-upload="beforeUpload"
       @remove="handleRemove"
     >
-      <n-button :loading="uploading">
-        {{ uploading ? 'Uploading...' : `Upload Images (Max ${maxImages})` }}
-      </n-button>
+      <div class="flex flex-col justify-center items-center w-full h-full bg-gray-50 border border-dashed border-gray-300 rounded hover:bg-gray-100 transition-colors">
+        <n-icon size="24" class="text-gray-400">
+          <Add />
+        </n-icon>
+        <span class="text-xs text-gray-500 mt-1">Upload</span>
+      </div>
     </n-upload>
     <p class="text-sm text-gray-500 mt-2">
       Accepted: JPG, PNG, WEBP. Max size: {{ Math.round(maxSize / 1024 / 1024) }}MB per image.

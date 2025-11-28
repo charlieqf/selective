@@ -24,15 +24,15 @@ const statusColors = {
 </script>
 
 <template>
-  <div class="card cursor-pointer hover:shadow-lg transition-shadow" @click="emit('click', props.question)">
+  <div class="card cursor-pointer hover:shadow-lg transition-shadow" data-testid="question-card" @click="emit('click', props.question)">
     <div v-if="firstImage" class="mb-3">
       <img :src="firstImage" :alt="props.question.title || 'Question'" class="w-full h-48 object-cover rounded-md" />
     </div>
     <div class="flex items-start justify-between mb-2">
-      <span class="text-sm font-medium text-primary-600">{{ props.question.subject }}</span>
+      <span class="text-sm font-medium text-primary-600" data-testid="card-subject">{{ props.question.subject }}</span>
       <span class="text-sm">{{ difficultyStars }}</span>
     </div>
-    <h3 v-if="props.question.title" class="font-semibold mb-2">{{ props.question.title }}</h3>
+    <h3 v-if="props.question.title" class="font-semibold mb-2" data-testid="card-title">{{ props.question.title }}</h3>
     <div class="flex items-center justify-between">
       <span :class="['text-xs px-2 py-1 rounded', statusColors[props.question.status]]">
         {{ props.question.status }}

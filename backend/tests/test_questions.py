@@ -61,13 +61,28 @@ def test_delete_question_cleanup(client, auth_headers):
         mock_destroy.assert_called_with('img123')
 
 def test_upload_delete(client, auth_headers):
+    from app.models.pending_upload import PendingUpload
+    from app import db
+    
     with patch('app.routes.upload.cloudinary.uploader.destroy') as mock_destroy:
         mock_destroy.return_value = {'result': 'ok'}
         
-        # 使用正确的public_id格式(包含selective-questions/前缀)
-        response = client.delete('/api/upload', json={'public_id': 'selective-questions/img123'}, headers=auth_headers)
+        # Seed database to simulate a recent upload by this user
+        public_id = 'selective-questions/img123'
+        pending_upload = PendingUpload(
+            public_id=public_id,
+            user_id=1  # Matches the test user ID
+        )
+        db.session.add(pending_upload)
+        db.session.commit()
+        
+        # Delete the pending upload
+        response = client.delete('/api/upload', json={'public_id': public_id}, headers=auth_headers)
         assert response.status_code == 200
-        mock_destroy.assert_called_with('selective-questions/img123')
+        mock_destroy.assert_called_with(public_id)
+        
+        # Verify it was removed from database
+        assert PendingUpload.query.filter_by(public_id=public_id).first() is None
 
 def test_upload_delete_unauthorized(client):
     response = client.delete('/api/upload', json={'public_id': 'img123'})

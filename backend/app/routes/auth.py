@@ -25,10 +25,16 @@ def register():
         
     try:
         # 3. 创建用户
+        # Validate and use role from request, default to 'student' if invalid
+        ALLOWED_ROLES = ['student', 'parent', 'tutor']
+        role = data.get('role', 'student')
+        if role not in ALLOWED_ROLES:
+            role = 'student'
+        
         user = User(
             username=data['username'],
             email=data['email'],
-            role='student'  # TODO: Support other roles via admin API or invitation
+            role=role
         )
         user.set_password(data['password'])
         

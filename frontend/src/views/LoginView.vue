@@ -39,7 +39,7 @@ async function handleLogin(e) {
     const { data } = await authApi.login(model.value)
     authStore.login(data.user, data.token)
     message.success('Login successful')
-    router.push('/')
+    router.push('/dashboard')
     
   } catch (error) {
     if (error.response) {

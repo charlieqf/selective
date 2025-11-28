@@ -62,3 +62,5 @@ venv/
 *.db
 .pytest_cache/
 
+frontend/test-results/
+frontend/test-results.json/

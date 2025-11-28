@@ -1,0 +1,18 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "user",
+          "value": "{\"created_at\":\"2025-11-23T03:55:40.100972\",\"email\":\"test@example.com\",\"id\":1,\"role\":\"student\",\"username\":\"testuser\"}"
+        },
+        {
+          "name": "access_token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc2NDI5MDE2NiwianRpIjoiYjYwMGJjNWUtNjg1Zi00YjE2LTgyMjgtOWE0ZmYzNzI5MjQyIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjEiLCJuYmYiOjE3NjQyOTAxNjYsImNzcmYiOiIzNDdhYzNjOC1lMmZlLTRmOWQtYTk5NC1lYTU5Njc1M2RjYjUiLCJleHAiOjE3NjQ4OTQ5NjZ9.-29Jvs_dWTAK8jNSPKVeVNbZPU8TSX5wCyhyiUi56gs"
+        }
+      ]
+    }
+  ]
+}

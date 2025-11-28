@@ -17,7 +17,10 @@ watch(localFilters, (newFilters) => {
 
 // 监听props.filters变化,同步到localFilters(实现双向绑定)
 watch(() => props.filters, (newFilters) => {
-  localFilters.value = { ...newFilters }
+  // Prevent infinite loop: only update if values actually changed
+  if (JSON.stringify(newFilters) !== JSON.stringify(localFilters.value)) {
+    localFilters.value = { ...newFilters }
+  }
 }, { deep: true })
 
 // 使用数据库中的大写枚举值
@@ -58,14 +61,15 @@ const sortOptions = [
   <div class="card mb-4">
     <n-space vertical>
       <n-space>
-        <n-select v-model:value="localFilters.subject" :options="subjectOptions" placeholder="Subject" style="width: 200px" />
-        <n-select v-model:value="localFilters.difficulty" :options="difficultyOptions" placeholder="Difficulty" style="width: 200px" />
-        <n-select v-model:value="localFilters.status" :options="statusOptions" placeholder="Status" style="width: 200px" />
+        <n-select v-model:value="localFilters.subject" :options="subjectOptions" placeholder="Subject" style="width: 200px" data-testid="subject-filter" />
+        <n-select v-model:value="localFilters.difficulty" :options="difficultyOptions" placeholder="Difficulty" style="width: 200px" data-testid="difficulty-filter" />
+        <n-select v-model:value="localFilters.status" :options="statusOptions" placeholder="Status" style="width: 200px" data-testid="status-filter" />
         <n-select 
           v-model:value="localFilters.sort" 
           :options="sortOptions" 
           placeholder="Sort by" 
           style="width: 200px"
+          data-testid="sort-filter"
           @update:value="(val) => { localFilters.sort_by = val.sort_by; localFilters.sort_direction = val.sort_direction }"
         />
       </n-space>

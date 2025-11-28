@@ -6,6 +6,7 @@ class RegisterSchema(ma.Schema):
     username = fields.Str(required=True, validate=validate.Length(min=3, max=64))
     email = fields.Email(required=True, validate=validate.Length(max=120))
     password = fields.Str(required=True, validate=validate.Length(min=6, max=128))
+    role = fields.Str(required=False) # Validation handled in route to support fallback
 
 class LoginSchema(ma.Schema):
     username = fields.Str(required=True)

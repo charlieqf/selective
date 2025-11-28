@@ -9,7 +9,6 @@ const router = createRouter({
             path: '/',
             redirect: '/dashboard'
         },
-        // 认证路由 - 使用AuthLayout
         {
             path: '/login',
             component: AuthLayout,
@@ -32,7 +31,6 @@ const router = createRouter({
                 }
             ]
         },
-        // 主应用路由 - 使用MainLayout
         {
             path: '/',
             component: MainLayout,
@@ -52,6 +50,11 @@ const router = createRouter({
                     path: 'questions/upload',
                     name: 'QuestionUpload',
                     component: () => import('../views/questions/QuestionUpload.vue')
+                },
+                {
+                    path: 'questions/:id',
+                    name: 'QuestionDetail',
+                    component: () => import('../views/questions/QuestionDetail.vue')
                 }
             ]
         }

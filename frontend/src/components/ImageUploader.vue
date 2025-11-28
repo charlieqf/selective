@@ -1,154 +1,163 @@
 <script setup>
 import { ref, watch } from 'vue'
-import uploadApi from '@/api/upload'
+import { NUpload, NButton, useMessage } from 'naive-ui'
+import uploadApi from '../api/upload'
 
 const props = defineProps({
   maxImages: { type: Number, default: 5 },
-  maxSize: { type: Number, default: 5 * 1024 * 1024 }, // 5MB
-  modelValue: { type: Array, default: () => [] }, // Array of { url, public_id }
+  maxSize: { type: Number, default: 5 * 1024 * 1024 },
+  modelValue: { type: Array, default: () => [] }, // {url, public_id}[]
+  enableUpload: { type: Boolean, default: true }  // Week 4启用Cloudinary
 })
 
-const emit = defineEmits(['update:modelValue', 'error', 'update:uploading'])
+const emit = defineEmits(['update:modelValue'])
 
+const message = useMessage()
+const fileList = ref([])
 const uploading = ref(false)
-const dragActive = ref(false)
 
-// Handle file selection
-const handleFileUpload = async (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-  await processFile(file)
-  // Reset input
-  event.target.value = ''
-}
+// 使用WeakMap追踪File对象→已上传数据的映射(解决文件名重复问题)
+const fileToUploadedMap = new WeakMap()
 
-// Handle drag and drop
-const handleDrop = async (event) => {
-  event.preventDefault()
-  dragActive.value = false
+// 监听props.modelValue变化(用于初始化和外部重置)
+let lastEmittedValue = []
+watch(() => props.modelValue, async (newValue) => {
+  // 避免循环:如果是我们自己emit的值,不处理
+  if (newValue === lastEmittedValue) return
   
-  const file = event.dataTransfer.files[0]
-  if (!file) return
-  await processFile(file)
-}
-
-const processFile = async (file) => {
-  // Validation
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-    emit('error', 'Only JPG, PNG and WEBP images are allowed.')
+  // 外部重置为空:清理Cloudinary资源
+  if (newValue.length === 0 && fileList.value.length > 0) {
+    // 删除所有已上传的图片
+    for (const item of fileList.value) {
+      const uploadedData = fileToUploadedMap.get(item.file) || item._uploadedData
+      if (uploadedData?.public_id) {
+        try {
+          await uploadApi.deleteImage(uploadedData.public_id)
+        } catch (err) {
+          console.error('Failed to cleanup image:', err)
+        }
+      }
+    }
+    fileList.value = []
     return
   }
   
+  // 外部提供初始值(用于编辑场景):只在fileList为空时初始化
+  if (newValue.length > 0 && fileList.value.length === 0) {
+    fileList.value = newValue.map((img, index) => ({
+      id: `uploaded-${index}`,
+      name: img.url.split('/').pop(),
+      status: 'finished',
+      url: img.url,
+      _uploadedData: img
+    }))
+  }
+}, { immediate: true })
+
+// Validate before upload
+function beforeUpload(data) {
+  const file = data.file.file
+  
+  // Check file type
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    message.error(`Invalid file type. Only JPG, PNG, and WEBP are allowed.`)
+    return false
+  }
+  
+  // Check file size
   if (file.size > props.maxSize) {
-    emit('error', `File size must be less than ${Math.round(props.maxSize / 1024 / 1024)}MB.`)
-    return
+    message.error(`File too large. Maximum size is ${Math.round(props.maxSize / 1024 / 1024)}MB.`)
+    return false
   }
   
-  if (props.modelValue.length >= props.maxImages) {
-    emit('error', `Maximum ${props.maxImages} images allowed.`)
+  return true
+}
+
+// 自定义上传请求
+async function customRequest({ file, onProgress, onFinish, onError }) {
+  if (!props.enableUpload) {
+    onFinish()
     return
   }
-  
-  // Defensive copy
-  const currentImages = [...props.modelValue]
-  
-  // Upload
+
   uploading.value = true
-  emit('update:uploading', true)
+
   try {
-    const response = await uploadApi.uploadImage(file)
-    const newImages = [...currentImages, {
-      url: response.data.url,
-      public_id: response.data.public_id
-    }]
-    emit('update:modelValue', newImages)
-  } catch (error) {
-    console.error('Upload failed:', error)
-    emit('error', 'Failed to upload image. Please try again.')
+    // 上传到Cloudinary
+    const { data } = await uploadApi.uploadImage(file.file)
+    
+    // 使用WeakMap保存File对象→上传数据的映射
+    fileToUploadedMap.set(file.file, {
+      url: data.url,
+      public_id: data.public_id
+    })
+    
+    // 更新modelValue
+    updateModelValue()
+    
+    onFinish()
+  } catch (err) {
+    message.error(`Failed to upload ${file.name}`)
+    onError()
   } finally {
     uploading.value = false
-    emit('update:uploading', false)
   }
 }
 
-const removeImage = async (index) => {
-  const image = props.modelValue[index]
-  if (!image) return
+// 文件移除时删除Cloudinary图片
+async function handleRemove({ file }) {
+  const uploadedData = fileToUploadedMap.get(file.file) || file._uploadedData
   
-  if (confirm('Are you sure you want to remove this image?')) {
+  if (uploadedData?.public_id) {
     try {
-      await uploadApi.deleteImage(image.public_id)
-      const newImages = [...props.modelValue]
-      newImages.splice(index, 1)
-      emit('update:modelValue', newImages)
-    } catch (error) {
-      console.error('Delete failed:', error)
-      emit('error', 'Failed to delete image from server.')
+      await uploadApi.deleteImage(uploadedData.public_id)
+    } catch (err) {
+      console.error('Failed to delete image:', err)
     }
   }
+  
+  // 从fileList移除后,updateModelValue会自动触发
+  updateModelValue()
+  return true
+}
+
+// 更新modelValue: 转换Naive UI fileList为{url, public_id}格式
+function updateModelValue() {
+  const uploaded = fileList.value
+    .map(item => {
+      // 通过File对象引用查找上传数据(不依赖文件名)
+      const data = fileToUploadedMap.get(item.file) || item._uploadedData
+      if (data) {
+        return { url: data.url, public_id: data.public_id }
+      }
+      return null
+    })
+    .filter(Boolean)
+  
+  // 记录我们emit的值,避免watch循环
+  lastEmittedValue = uploaded
+  emit('update:modelValue', uploaded)
 }
 </script>
 
 <template>
   <div>
-    <label class="block text-sm font-medium text-gray-700">Question Images</label>
-    
-    <div 
-      class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-colors"
-      :class="[
-        dragActive ? 'border-primary-500 bg-primary-50' : 'border-gray-300',
-        uploading ? 'opacity-50 cursor-wait' : ''
-      ]"
-      @dragenter.prevent="dragActive = true"
-      @dragleave.prevent="dragActive = false"
-      @dragover.prevent
-      @drop="handleDrop"
+    <n-upload
+      v-model:file-list="fileList"
+      :max="maxImages"
+      list-type="image-card"
+      accept="image/jpeg,image/png,image/webp"
+      :custom-request="customRequest"
+      :before-upload="beforeUpload"
+      @remove="handleRemove"
     >
-      <div class="space-y-1 text-center w-full">
-        <!-- Empty State -->
-        <div v-if="modelValue.length === 0">
-          <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          <div class="flex text-sm text-gray-600 justify-center">
-            <label class="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
-              <span>Upload a file</span>
-              <input type="file" class="sr-only" @change="handleFileUpload" accept="image/png, image/jpeg, image/webp" :disabled="uploading">
-            </label>
-            <p class="pl-1">or drag and drop</p>
-          </div>
-          <p class="text-xs text-gray-500">PNG, JPG, WEBP up to {{ Math.round(maxSize / 1024 / 1024) }}MB</p>
-        </div>
-        
-        <!-- Image Preview Grid -->
-        <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <div v-for="(img, index) in modelValue" :key="img.public_id" class="relative group">
-            <img :src="img.url" class="h-24 w-full object-cover rounded-md shadow-sm" />
-            <button 
-              type="button"
-              @click="removeImage(index)"
-              class="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 focus:outline-none"
-              :disabled="uploading"
-            >
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          
-          <!-- Add More Button -->
-          <div v-if="modelValue.length < maxImages" class="flex items-center justify-center h-24 border-2 border-gray-300 border-dashed rounded-md hover:border-gray-400 transition-colors">
-            <label class="cursor-pointer w-full h-full flex items-center justify-center">
-              <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              <input type="file" class="sr-only" @change="handleFileUpload" accept="image/png, image/jpeg, image/webp" :disabled="uploading">
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <p v-if="uploading" class="mt-2 text-sm text-primary-600 animate-pulse">Uploading...</p>
+      <n-button :loading="uploading">
+        {{ uploading ? 'Uploading...' : `Upload Images (Max ${maxImages})` }}
+      </n-button>
+    </n-upload>
+    <p class="text-sm text-gray-500 mt-2">
+      Accepted: JPG, PNG, WEBP. Max size: {{ Math.round(maxSize / 1024 / 1024) }}MB per image.
+    </p>
   </div>
 </template>

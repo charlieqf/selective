@@ -1,228 +1,140 @@
-<template>
-  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="md:flex md:items-center md:justify-between mb-6">
-      <div class="flex-1 min-w-0">
-        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-          Upload New Question
-        </h2>
-      </div>
-    </div>
-
-    <div class="bg-white shadow sm:rounded-lg">
-      <div class="px-4 py-5 sm:p-6">
-        <form @submit.prevent="handleSubmit" class="space-y-6">
-          <!-- Image Upload -->
-          <div>
-            <ImageUploader 
-              v-model="uploadedImages"
-              @update:uploading="uploading = $event"
-              @error="handleUploadError"
-            />
-            <p v-if="errors.images" class="mt-2 text-sm text-red-600">{{ errors.images }}</p>
-          </div>
-
-          <!-- Subject -->
-          <div>
-            <label for="subject" class="block text-sm font-medium text-gray-700">Subject</label>
-            <select
-              id="subject"
-              v-model="form.subject"
-              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
-              :class="{'border-red-300': errors.subject}"
-            >
-              <option value="" disabled>Select a subject</option>
-              <option value="READING">Reading</option>
-              <option value="WRITING">Writing</option>
-              <option value="MATHS">Maths</option>
-              <option value="THINKING_SKILLS">Thinking Skills</option>
-            </select>
-            <p v-if="errors.subject" class="mt-2 text-sm text-red-600">{{ errors.subject }}</p>
-          </div>
-
-          <!-- Difficulty -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Difficulty (1-5)</label>
-            <div class="mt-1 flex items-center space-x-4">
-              <div v-for="level in 5" :key="level" class="flex items-center">
-                <input
-                  :id="`difficulty-${level}`"
-                  name="difficulty"
-                  type="radio"
-                  :value="level"
-                  v-model="form.difficulty"
-                  class="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300"
-                >
-                <label :for="`difficulty-${level}`" class="ml-2 block text-sm text-gray-700">
-                  {{ level }}
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Title (Optional) -->
-          <div>
-            <label for="title" class="block text-sm font-medium text-gray-700">Title (Optional)</label>
-            <input
-              type="text"
-              id="title"
-              v-model="form.title"
-              class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-              placeholder="e.g. 2023 Practice Test Q5"
-            >
-          </div>
-
-          <!-- Content Text (Optional) -->
-          <div>
-            <label for="content" class="block text-sm font-medium text-gray-700">Description / Notes</label>
-            <textarea
-              id="content"
-              v-model="form.content_text"
-              rows="3"
-              class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-            ></textarea>
-          </div>
-
-          <!-- Actions -->
-          <div class="flex justify-end space-x-3">
-            <button
-              type="button"
-              @click="handleCancel"
-              class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              :disabled="submitting || uploading"
-              class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-            >
-              {{ submitting ? 'Saving...' : 'Save Question' }}
-            </button>
-          </div>
-          
-          <div v-if="submitError" class="rounded-md bg-red-50 p-4 mt-4">
-            <div class="flex">
-              <div class="ml-3">
-                <h3 class="text-sm font-medium text-red-800">Submission failed</h3>
-                <div class="mt-2 text-sm text-red-700">
-                  <p>{{ submitError }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
-import { ref, reactive, onBeforeUnmount } from 'vue'
-import { useRouter, onBeforeRouteLeave } from 'vue-router'
-import { useQuestionStore } from '@/stores/question'
-import uploadApi from '@/api/upload'
-import ImageUploader from '@/components/ImageUploader.vue'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useMessage, NForm, NFormItem, NInput, NSelect, NButton, NCard, NSpace } from 'naive-ui'
+import { useQuestionStore } from '../../stores/question'
+import ImageUploader from '../../components/ImageUploader.vue'  // 复用Week 3组件
 
 const router = useRouter()
+const message = useMessage()
 const questionStore = useQuestionStore()
 
-const form = reactive({
-  subject: '',
-  difficulty: 3,
+const formRef = ref(null)
+const loading = ref(false)
+
+// ImageUploader会自动上传并emit {url, public_id}[]格式
+const uploadedImages = ref([])
+
+const model = ref({
   title: '',
+  subject: null,
+  difficulty: 3,
   content_text: ''
 })
 
-const uploadedImages = ref([]) // Array of { url, public_id }
-const uploading = ref(false)
-const submitting = ref(false)
-const submitError = ref(null)
-const errors = reactive({})
-const questionSaved = ref(false) // Track if question was successfully saved
+const subjectOptions = [
+  { label: 'Reading', value: 'READING' },
+  { label: 'Writing', value: 'WRITING' },
+  { label: 'Maths', value: 'MATHS' },
+  { label: 'Thinking Skills', value: 'THINKING_SKILLS' }
+]
 
-const handleUploadError = (msg) => {
-  alert(msg)
+const rules = {
+  subject: {
+    required: true,
+    message: 'Please select a subject',
+    trigger: 'change'
+  }
 }
 
-const validate = () => {
-  const newErrors = {}
-  
-  if (!form.subject) {
-    newErrors.subject = 'Subject is required'
-  }
-  
-  if (uploadedImages.value.length === 0 && !form.content_text) {
-    newErrors.images = 'Please upload at least one image or provide a description'
-  }
-  
-  Object.keys(errors).forEach(key => delete errors[key])
-  Object.assign(errors, newErrors)
-  
-  return Object.keys(errors).length === 0
-}
-
-const cleanupImages = async () => {
-  for (const img of uploadedImages.value) {
-    try {
-      await uploadApi.deleteImage(img.public_id)
-    } catch (e) {
-      console.error('Cleanup failed for image:', img.public_id, e)
-    }
-  }
-  uploadedImages.value = []
-}
-
-const handleSubmit = async () => {
-  if (!validate()) return
-  
-  submitting.value = true
-  submitError.value = null
-  
+async function handleSubmit() {
   try {
-    await questionStore.createQuestion({
-      ...form,
+    await formRef.value?.validate()
+    
+    if (uploadedImages.value.length === 0) {
+      message.warning('Please upload at least one image')
+      return
+    }
+    
+    loading.value = true
+    
+    // uploadedImages已经是{url, public_id}格式,直接使用
+    const questionData = {
+      ...model.value,
       images: uploadedImages.value
-    })
-    questionSaved.value = true
+    }
+    
+    await questionStore.createQuestion(questionData)
+    message.success('Question uploaded successfully')
     router.push('/questions')
+    
   } catch (error) {
-    submitError.value = error.response?.data?.error || 'Failed to create question'
-    // Cleanup images on submission failure
-    await cleanupImages()
-    uploadedImages.value = []
+    message.error(error.message || 'Failed to upload question')
+    // ImageUploader组件内部已处理Cloudinary清理
   } finally {
-    submitting.value = false
+    loading.value = false
   }
 }
 
-const handleCancel = async () => {
-  if (uploadedImages.value.length > 0) {
-    if (confirm('Discard unsaved changes? Uploaded images will be deleted.')) {
-      await cleanupImages()
-      router.back()
-    }
-  } else {
-    router.back()
-  }
+function handleCancel() {
+  // 清空uploadedImages会触发ImageUploader的watch
+  // watch检测到空数组后会自动删除Cloudinary图片
+  uploadedImages.value = []
+  router.push('/questions')
 }
-
-// Cleanup on navigation away without saving
-onBeforeRouteLeave((to, from, next) => {
-  if (!questionSaved.value && uploadedImages.value.length > 0) {
-    if (confirm('You have unsaved images. Discard them?')) {
-      cleanupImages().then(() => next())
-    } else {
-      next(false)
-    }
-  } else {
-    next()
-  }
-})
-
-// Cleanup on component unmount (e.g., browser close)
-onBeforeUnmount(() => {
-  if (!questionSaved.value && uploadedImages.value.length > 0) {
-    cleanupImages()
-  }
-})
 </script>
+
+<template>
+  <div class="container max-w-4xl mx-auto">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold">Upload New Question</h1>
+      <p class="text-gray-600">Add a question from your practice materials</p>
+    </div>
+
+    <n-card>
+      <n-form ref="formRef" :model="model" :rules="rules">
+        <!-- 图片上传 - 复用ImageUploader组件 -->
+        <n-form-item label="Question Images" required>
+          <ImageUploader 
+            v-model="uploadedImages"
+            :enable-upload="true"
+            :max-images="5"
+          />
+        </n-form-item>
+
+        <!-- 标题 -->
+        <n-form-item label="Title (Optional)">
+          <n-input v-model:value="model.title" placeholder="e.g., Year 2023 Question 15" />
+        </n-form-item>
+
+        <!-- 科目 -->
+        <n-form-item label="Subject" path="subject">
+          <n-select v-model:value="model.subject" :options="subjectOptions" placeholder="Select subject" />
+        </n-form-item>
+
+        <!-- 难度 -->
+        <n-form-item label="Difficulty">
+          <n-select 
+            v-model:value="model.difficulty" 
+            :options="[
+              { label: '⭐ Very Easy', value: 1 },
+              { label: '⭐⭐ Easy', value: 2 },
+              { label: '⭐⭐⭐ Medium', value: 3 },
+              { label: '⭐⭐⭐⭐ Hard', value: 4 },
+              { label: '⭐⭐⭐⭐⭐ Very Hard', value: 5 }
+            ]"
+            placeholder="Select difficulty"
+          />
+        </n-form-item>
+
+        <!-- 描述/OCR文本 -->
+        <n-form-item label="Description (Optional)">
+          <n-input 
+            v-model:value="model.content_text" 
+            type="textarea" 
+            :rows="4"
+            placeholder="Add notes or paste OCR text..."
+          />
+        </n-form-item>
+
+        <!-- 操作按钮 -->
+        <n-space justify="end">
+          <n-button @click="handleCancel">Cancel</n-button>
+          <n-button type="primary" :loading="loading" @click="handleSubmit">
+            Upload Question
+          </n-button>
+        </n-space>
+      </n-form>
+    </n-card>
+  </div>
+</template>

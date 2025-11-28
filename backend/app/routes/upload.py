@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import cloudinary.uploader
 import cloudinary.api
+from app import db
+from app.models.pending_upload import PendingUpload
 
 bp = Blueprint('upload', __name__, url_prefix='/api/upload')
 
@@ -24,8 +26,7 @@ def upload_image():
         
     if file and allowed_file(file.filename):
         try:
-            # Check file size (approximate, as content-length might not be accurate)
-            # Better to let Cloudinary handle or check stream length, but simple check here:
+            # Check file size
             file.seek(0, 2)
             size = file.tell()
             file.seek(0)
@@ -33,18 +34,36 @@ def upload_image():
             if size > 5 * 1024 * 1024: # 5MB
                 return jsonify({'error': 'File too large (max 5MB)'}), 400
             
+            current_user_id = get_jwt_identity()
+            
             upload_result = cloudinary.uploader.upload(
                 file,
                 folder="selective-questions",
                 resource_type="image"
             )
             
+            # Track this upload in database (multi-worker safe)
+            public_id = upload_result['public_id']
+            pending_upload = PendingUpload(
+                public_id=public_id,
+                user_id=int(current_user_id)
+            )
+            db.session.add(pending_upload)
+            db.session.commit()
+            
+            # Cleanup expired uploads periodically (async in production)
+            try:
+                PendingUpload.cleanup_expired()
+            except Exception as e:
+                print(f"Cleanup warning: {e}")
+            
             return jsonify({
                 'url': upload_result['secure_url'],
-                'public_id': upload_result['public_id']
+                'public_id': public_id
             }), 201
             
         except Exception as e:
+            db.session.rollback()
             print(f"Upload error: {str(e)}")
             return jsonify({'error': 'Upload failed'}), 500
             
@@ -64,7 +83,7 @@ def delete_image():
     current_user_id = get_jwt_identity()
     
     try:
-        # Find question that owns this image
+        # Check if image belongs to user's questions
         questions = Question.query.filter_by(author_id=current_user_id).all()
         
         image_found = False
@@ -77,27 +96,36 @@ def delete_image():
             if image_found:
                 break
         
-        # Check if it's a pending upload (uploaded in last 24 hours, not in any question)
-        # For now, we verify it's in the user's folder by checking the public_id prefix
-        # Cloudinary uploads are stored in "selective-questions/" folder
-        # We could enhance this by storing pending uploads in Redis/DB with user_id
-        
+        # If not in questions, check pending uploads (DB-backed, multi-worker safe)
         if not image_found:
-            # Verify the public_id belongs to our application folder
+            # Verify prefix first
             if not public_id.startswith('selective-questions/'):
-                return jsonify({'error': 'Unauthorized: Image does not belong to you'}), 403
+                return jsonify({'error': 'Unauthorized: Invalid public_id'}), 403
             
-            # For pending uploads, we allow deletion
-            # In production, you should track uploads in a database/cache with user_id
-            # and verify ownership here
+            # Check database for pending upload
+            pending_upload = PendingUpload.query.filter_by(public_id=public_id).first()
+            if pending_upload:
+                # Verify the user owns this pending upload
+                if str(pending_upload.user_id) != str(current_user_id):
+                    return jsonify({'error': 'Unauthorized: You cannot delete this image'}), 403
+                # Don't delete from DB yet - wait for Cloudinary success
+            else:
+                # Not in questions and not in pending uploads - unauthorized
+                return jsonify({'error': 'Unauthorized: Image not found or does not belong to you'}), 403
         
-        # Only delete if ownership is verified
+        # Delete from Cloudinary FIRST
         result = cloudinary.uploader.destroy(public_id)
         if result.get('result') == 'ok' or result.get('result') == 'not found':
+            # Only now remove from database (if it was a pending upload)
+            if not image_found and pending_upload:
+                db.session.delete(pending_upload)
+                db.session.commit()
             return jsonify({'message': 'Image deleted successfully'}), 200
         else:
-            return jsonify({'error': 'Failed to delete image'}), 400
+            # Cloudinary failed - don't touch database, user can retry
+            return jsonify({'error': 'Failed to delete image from storage'}), 400
             
     except Exception as e:
+        db.session.rollback()
         print(f"Delete image error: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500

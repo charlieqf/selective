@@ -49,10 +49,11 @@ npm run dev
 #### 数据库
 - **选项A**：连接云端开发数据库（推荐）
   ```
-  DATABASE_URL=mysql+pymysql://...@aws.connect.psdb.cloud/selective-dev
+  DATABASE_URL=mysql+pymysql://...@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/selective-dev
   ```
-  - 优点：Windows不需要安装MySQL
+  - 优点：Windows不需要安装MySQL，**TiDB Cloud Serverless免费**
   - 缺点：需要网络连接
+  - **详细配置请参考**: [Cloud Services Setup Guide](./cloud-services-setup.md)
 
 - **选项B**：本地MySQL
   ```bash
@@ -167,15 +168,16 @@ URL: https://selective-backend.onrender.com
 
 **推荐：Railway**（无冷启动，体验更好）
 
-#### 数据库：PlanetScale
+#### 数据库：TiDB Cloud Serverless (推荐)
 ```
-服务: PlanetScale
+服务: TiDB Cloud
 特点:
-  ✅ 免费5GB
-  ✅ 自动备份
-  ✅ 全球低延迟
-  ✅ 无需自己维护
+  ✅ 永久免费 (5GB存储, 50M RU/月)
+  ✅ MySQL高度兼容
+  ✅ Serverless自动扩展
+  ✅ 无需信用卡
 ```
+*(PlanetScale已取消免费套餐，不再推荐)*
 
 #### 文件存储：Cloudinary
 ```
@@ -393,7 +395,7 @@ git push origin main
 ### 开发环境（本地）
 ```bash
 # backend/.env
-DATABASE_URL=mysql+pymysql://...@aws.connect.psdb.cloud/selective-dev
+DATABASE_URL=mysql+pymysql://...@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/selective-dev
 FLASK_ENV=development
 FLASK_DEBUG=True
 JWT_SECRET_KEY=dev-secret-key
@@ -490,12 +492,12 @@ VITE_API_URL=https://api.yourdomain.com
 测试环境（云端）:
 ├── Vercel前端（develop分支自动部署）
 ├── Railway后端（develop分支自动部署）
-└── PlanetScale staging数据库
+└── TiDB Cloud Serverless数据库
 
 生产环境（云端）:
 ├── Vercel前端（main分支自动部署）
 ├── Railway后端（main分支自动部署）
-└── PlanetScale production数据库
+└── TiDB Cloud Serverless数据库
 
 存储:
 └── Cloudinary（所有环境共用）

@@ -60,7 +60,9 @@ function handleLogout() {
       @expand="collapsed = false"
     >
       <div class="p-4">
-        <h1 v-if="!collapsed" class="text-xl font-bold text-primary">Selective Prep</h1>
+        <router-link v-if="!collapsed" to="/dashboard" class="no-underline">
+          <h1 class="text-xl font-bold text-primary cursor-pointer hover:text-primary-600 transition-colors">Selective Prep</h1>
+        </router-link>
         <h1 v-else class="text-xl font-bold text-primary text-center">S</h1>
       </div>
       <n-menu 
@@ -75,7 +77,9 @@ function handleLogout() {
       <n-layout-header bordered class="p-4 flex justify-between items-center">
         <div>
           <!-- 移动端显示标题 -->
-          <h1 v-if="isMobile" class="text-lg font-bold text-primary">Selective Prep</h1>
+          <router-link to="/dashboard" class="no-underline">
+            <h1 v-if="isMobile" class="text-lg font-bold text-primary cursor-pointer">Selective Prep</h1>
+          </router-link>
         </div>
         <div class="flex items-center gap-2">
           <span class="text-sm text-gray-600">{{ authStore.user?.username }}</span>

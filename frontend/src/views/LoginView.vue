@@ -85,8 +85,8 @@ async function handleLogin(e) {
         </n-form>
         
         <div class="text-center mt-4">
-          <router-link to="/" class="text-primary-600 hover:text-primary-500 mr-4">Home</router-link>
-          <router-link to="/register" class="text-primary-600 hover:text-primary-500">Create account</router-link>
+          <span class="text-gray-600">Don't have an account? </span>
+          <router-link to="/register" class="text-primary-600 hover:text-primary-500 font-medium">Create account</router-link>
         </div>
       </n-card>
     </div>

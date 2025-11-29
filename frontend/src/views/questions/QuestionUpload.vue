@@ -3,7 +3,12 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage, NForm, NFormItem, NInput, NSelect, NButton, NCard, NSpace } from 'naive-ui'
 import { useQuestionStore } from '../../stores/question'
+import { useRoute } from 'vue-router'
 import ImageUploader from '../../components/ImageUploader.vue'  // 复用Week 3组件
+
+import uploadApi from '../../api/upload'
+
+const route = useRoute()
 
 const router = useRouter()
 const message = useMessage()
@@ -11,9 +16,12 @@ const questionStore = useQuestionStore()
 
 const formRef = ref(null)
 const loading = ref(false)
+const isEditMode = ref(false)
+const questionId = ref(null)
 
 // ImageUploader会自动上传并emit {url, public_id}[]格式
 const uploadedImages = ref([])
+const initialImages = ref([]) // Track original state for cleanup
 
 const model = ref({
   title: '',
@@ -37,6 +45,34 @@ const rules = {
   }
 }
 
+// Initialize for Edit Mode
+import { onMounted } from 'vue'
+
+onMounted(async () => {
+  if (route.params.id) {
+    isEditMode.value = true
+    questionId.value = route.params.id
+    loading.value = true
+    try {
+      const question = await questionStore.getQuestion(questionId.value)
+      model.value = {
+        title: question.title,
+        subject: question.subject,
+        difficulty: question.difficulty,
+        content_text: question.content_text
+      }
+      // Transform images for uploader
+      uploadedImages.value = question.images || []
+      initialImages.value = JSON.parse(JSON.stringify(uploadedImages.value))
+    } catch (error) {
+      message.error('Failed to load question')
+      router.push('/questions')
+    } finally {
+      loading.value = false
+    }
+  }
+})
+
 async function handleSubmit() {
   try {
     await formRef.value?.validate()
@@ -54,9 +90,15 @@ async function handleSubmit() {
       images: uploadedImages.value
     }
     
-    await questionStore.createQuestion(questionData)
-    message.success('Question uploaded successfully')
-    router.push('/questions')
+    if (isEditMode.value) {
+      await questionStore.updateQuestion(questionId.value, questionData)
+      message.success('Question updated successfully')
+      router.push(`/questions/${questionId.value}`)
+    } else {
+      await questionStore.createQuestion(questionData)
+      message.success('Question uploaded successfully')
+      router.push('/questions')
+    }
     
   } catch (error) {
     message.error(error.message || 'Failed to upload question')
@@ -66,10 +108,36 @@ async function handleSubmit() {
   }
 }
 
-function handleCancel() {
-  // 清空uploadedImages会触发ImageUploader的watch
-  // watch检测到空数组后会自动删除Cloudinary图片
-  uploadedImages.value = []
+async function handleCancel() {
+  const currentImages = uploadedImages.value
+  const initial = initialImages.value
+  
+  let imagesToDelete = []
+
+  if (isEditMode.value) {
+    // Edit Mode: Only delete NEW images that weren't there initially
+    // We keep images that were in initial (even if removed from UI, because we are cancelling the removal)
+    imagesToDelete = currentImages.filter(img => 
+      !initial.some(init => init.public_id === img.public_id)
+    )
+  } else {
+    // Create Mode: All images are new and unsaved, so delete them all
+    imagesToDelete = currentImages
+  }
+  
+  // Delete from Cloudinary
+  if (imagesToDelete.length > 0) {
+    loading.value = true
+    try {
+      await Promise.all(imagesToDelete.map(img => uploadApi.deleteImage(img.public_id)))
+      message.info('Cleaned up unsaved uploads')
+    } catch (error) {
+      console.error('Failed to cleanup uploads:', error)
+    } finally {
+      loading.value = false
+    }
+  }
+
   router.push('/questions')
 }
 </script>
@@ -77,8 +145,8 @@ function handleCancel() {
 <template>
   <div class="container max-w-4xl mx-auto">
     <div class="mb-6">
-      <h1 class="text-3xl font-bold">Upload New Question</h1>
-      <p class="text-gray-600">Add a question from your practice materials</p>
+      <h1 class="text-3xl font-bold">{{ isEditMode ? 'Edit Question' : 'Upload New Question' }}</h1>
+      <p class="text-gray-600">{{ isEditMode ? 'Update question details' : 'Add a question from your practice materials' }}</p>
     </div>
 
     <n-card>
@@ -131,7 +199,7 @@ function handleCancel() {
         <n-space justify="end">
           <n-button @click="handleCancel">Cancel</n-button>
           <n-button type="primary" :loading="loading" @click="handleSubmit">
-            Upload Question
+            {{ isEditMode ? 'Update Question' : 'Upload Question' }}
           </n-button>
         </n-space>
       </n-form>

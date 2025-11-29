@@ -11,7 +11,7 @@
 ### 后端
 - **框架**: Python Flask 3.0 ✅ 已锁定
 - **ORM**: SQLAlchemy 2.0
-- **数据库**: MySQL 8.0 (PlanetScale)
+- **数据库**: MySQL 8.0 (TiDB Cloud Serverless)
 - **认证**: Flask-JWT-Extended
 
 ### 前端
@@ -23,7 +23,7 @@
 ### 部署
 - **前端**: Vercel
 - **后端**: Railway
-- **数据库**: PlanetScale
+- **数据库**: TiDB Cloud
 
 ---
 
@@ -39,7 +39,7 @@
 ### 为什么选择 MySQL 而非 PostgreSQL？
 
 1. **熟悉度**: 您更熟悉MySQL
-2. **PlanetScale**: 提供优秀的MySQL托管服务
+2. **TiDB Cloud**: 提供优秀的MySQL Serverless托管服务（永久免费）
 3. **性能**: MySQL 8.0对JSON支持已足够
 
 ---
@@ -51,22 +51,6 @@
 ### ❌ Next.js 全栈方案
 - 理由: 用户不熟悉TypeScript和React
 - 文档: 已清理所有Next.js相关描述
-
-### ❌ React 前端
-- 理由: 学习曲线较Vue陡峭
-- 状态: 选择了Vue 3
-
-### ❌ PostgreSQL 数据库
-- 理由: MySQL更熟悉
-- 状态: 选择了MySQL + PlanetScale
-
-### ❌ Supabase
-- 理由: 不使用PostgreSQL
-- 状态: 选择了PlanetScale
-
----
-
-## 📝 数据模型决策
 
 ### ✅ 使用 String 而非 Enum
 

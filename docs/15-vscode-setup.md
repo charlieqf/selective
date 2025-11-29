@@ -317,7 +317,7 @@ code --install-extension esbenp.prettier-vscode
 
 ## SQLTools数据库连接配置
 
-### 连接PlanetScale（开发数据库）
+### 连接TiDB Cloud（开发数据库）
 
 1. 安装SQLTools和MySQL驱动插件
 2. 点击左侧「SQLTools」图标
@@ -326,12 +326,12 @@ code --install-extension esbenp.prettier-vscode
 5. 填写配置：
 
 ```
-Connection name: PlanetScale Dev
+Connection name: TiDB Cloud Dev
 Server: aws.connect.psdb.cloud
 Port: 3306
 Database: selective-dev
-Username: [从PlanetScale复制]
-Password: [从PlanetScale复制]
+Username: [从TiDB Cloud复制]
+Password: [从TiDB Cloud复制]
 SSL: Use SSL
 ```
 

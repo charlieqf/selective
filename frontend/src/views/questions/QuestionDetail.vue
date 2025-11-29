@@ -3,7 +3,9 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuestionStore } from '../../stores/question'
 import { useAuthStore } from '../../stores/auth'
+import questionsApi from '@/api/questions'
 import LoadingSpinner from '../../components/LoadingSpinner.vue'
+import AnswerSection from '../../components/AnswerSection.vue'
 import { NCard, NSpace, NTag, NButton, NCarousel, NEmpty, useMessage } from 'naive-ui'
 
 const route = useRoute()
@@ -11,6 +13,8 @@ const router = useRouter()
 const questionStore = useQuestionStore()
 const authStore = useAuthStore()
 const message = useMessage()
+const answerHistory = ref([])
+const loadingHistory = ref(false)
 
 // Watch route param to reload when ID changes
 watch(
@@ -18,10 +22,23 @@ watch(
   async (newId) => {
     if (newId) {
       await questionStore.getQuestion(newId)
+      fetchHistory(newId)
     }
   },
   { immediate: true }
 )
+
+async function fetchHistory(id) {
+  loadingHistory.value = true
+  try {
+    const response = await questionsApi.getAnswerHistory(id)
+    answerHistory.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch history', error)
+  } finally {
+    loadingHistory.value = false
+  }
+}
 
 const question = computed(() => questionStore.currentQuestion)
 
@@ -63,8 +80,7 @@ function handleBack() {
 }
 
 function handleEdit() {
-  message.info('Edit functionality coming in Week 5')
-  // router.push(`/questions/${questionId}/edit`)
+  router.push(`/questions/${route.params.id}/edit`)
 }
 
 async function handleDelete() {
@@ -77,6 +93,13 @@ async function handleDelete() {
       message.error('Failed to delete question')
     }
   }
+}
+
+function handleAnswerSubmitted(result) {
+  // Refresh question data to update status
+  questionStore.getQuestion(route.params.id)
+  // Refresh history
+  fetchHistory(route.params.id)
 }
 </script>
 
@@ -150,9 +173,36 @@ async function handleDelete() {
         </div>
       </n-card>
 
-      <!-- Answer History Placeholder -->
+      <!-- Answer Section -->
+      <AnswerSection 
+        v-if="question.status !== 'MASTERED'"
+        :key="question.id"
+        :question-id="question.id"
+        @answer-submitted="handleAnswerSubmitted"
+      />
+
+      <!-- Answer History -->
       <n-card title="Answer History">
-        <n-empty description="Answer tracking coming in Week 5" />
+        <div v-if="loadingHistory" class="py-4 text-center text-gray-500">Loading history...</div>
+        <div v-else-if="answerHistory.length > 0" class="space-y-4">
+          <div 
+            v-for="answer in answerHistory" 
+            :key="answer.id"
+            class="flex items-center justify-between p-3 rounded bg-gray-50 border border-gray-100"
+          >
+            <div class="flex items-center space-x-3">
+              <span class="text-2xl">{{ answer.is_correct ? '✅' : '❌' }}</span>
+              <div>
+                <div class="font-medium">{{ answer.is_correct ? 'Correct' : 'Incorrect' }}</div>
+                <div class="text-xs text-gray-500">{{ new Date(answer.created_at).toLocaleString() }}</div>
+              </div>
+            </div>
+            <div class="text-sm text-gray-600">
+              Duration: {{ Math.floor(answer.duration_seconds / 60) }}:{{ (answer.duration_seconds % 60).toString().padStart(2, '0') }}
+            </div>
+          </div>
+        </div>
+        <n-empty v-else description="No attempts yet" />
       </n-card>
     </template>
   </div>

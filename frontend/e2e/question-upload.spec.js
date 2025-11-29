@@ -61,7 +61,8 @@ test.describe('Question Upload', () => {
         const testImagePath = path.join(__dirname, 'fixtures', 'test-image.jpg')
 
         // Wait for upload trigger button
-        const uploadTrigger = page.locator('text=Upload Images (Max 5)')
+        // The ImageUploader component has a span with text "Upload"
+        const uploadTrigger = page.locator('.n-upload-trigger')
         await uploadTrigger.waitFor()
 
         // Trigger file chooser
@@ -117,7 +118,8 @@ test.describe('Question Upload', () => {
         const testImagePath = path.join(__dirname, 'fixtures', 'test-image.jpg')
 
         // Wait for upload trigger button
-        const uploadTrigger = page.locator('text=Upload Images (Max 5)')
+        // The ImageUploader component has a span with text "Upload"
+        const uploadTrigger = page.locator('.n-upload-trigger')
         await uploadTrigger.waitFor()
 
         // Trigger file chooser

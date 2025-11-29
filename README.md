@@ -35,7 +35,7 @@ NSW精英中学入学考试涵盖四个核心科目：Reading（阅读）、Writ
 ### 后端
 - **Framework**: Python Flask 3.0
 - **ORM**: SQLAlchemy + Flask-SQLAlchemy
-- **Database**: MySQL 8.0 (PlanetScale)
+- **Database**: MySQL 8.0 (TiDB Cloud Serverless)
 - **Authentication**: Flask-JWT-Extended
 - **File Storage**: Cloudinary Python SDK
 
@@ -50,7 +50,7 @@ NSW精英中学入学考试涵盖四个核心科目：Reading（阅读）、Writ
 ### 部署
 - **Frontend**: Vercel (免费)
 - **Backend**: Railway (免费$5/月)
-- **Database**: PlanetScale (免费5GB)
+- **Database**: TiDB Cloud (免费Serverless)
 - **Total Cost**: $0/月 (免费额度内)
 
 ## 📋 开发阶段
@@ -82,7 +82,7 @@ NSW精英中学入学考试涵盖四个核心科目：Reading（阅读）、Writ
 
 ### 本周（Week 1）
 1. [ ] 注册必要服务
-   - [ ] PlanetScale（MySQL数据库）
+   - [ ] TiDB Cloud（MySQL数据库）
    - [ ] Cloudinary（图片存储）
 2. [ ] 创建Flask后端项目
 3. [ ] 配置数据库连接

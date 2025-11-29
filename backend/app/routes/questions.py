@@ -74,6 +74,12 @@ def create_question():
         )
         question.set_images(data.get('images', []))
         
+        # Promote pending uploads (remove from tracking so they aren't cleaned up)
+        from app.models.pending_upload import PendingUpload
+        for img in data.get('images', []):
+            if 'public_id' in img:
+                PendingUpload.query.filter_by(public_id=img['public_id']).delete()
+        
         db.session.add(question)
         db.session.commit()
         
@@ -126,6 +132,11 @@ def update_question(id):
             question.content_text = data['content_text']
         if 'images' in data:
             question.set_images(data['images'])
+            # Promote pending uploads
+            from app.models.pending_upload import PendingUpload
+            for img in data['images']:
+                if 'public_id' in img:
+                    PendingUpload.query.filter_by(public_id=img['public_id']).delete()
             
         db.session.commit()
         return jsonify(schema.dump(question)), 200

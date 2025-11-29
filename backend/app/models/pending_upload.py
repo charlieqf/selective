@@ -15,9 +15,21 @@ class PendingUpload(db.Model):
     @staticmethod
     def cleanup_expired(hours=24):
         """Remove uploads older than specified hours"""
+        import cloudinary.uploader
+        
         cutoff = datetime.utcnow() - timedelta(hours=hours)
         expired = PendingUpload.query.filter(PendingUpload.created_at < cutoff).all()
+        
+        count = 0
         for upload in expired:
-            db.session.delete(upload)
+            try:
+                # Delete from Cloudinary
+                cloudinary.uploader.destroy(upload.public_id)
+                # Delete from DB
+                db.session.delete(upload)
+                count += 1
+            except Exception as e:
+                print(f"Failed to delete expired upload {upload.public_id}: {e}")
+                
         db.session.commit()
-        return len(expired)
+        return count

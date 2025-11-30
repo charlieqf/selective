@@ -7,7 +7,7 @@ class Answer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     # Relationships
-    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     # Content (Optional for self-marking, but good to have)
@@ -27,7 +27,7 @@ class Answer(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'question_id': self.question_id,
+            'item_id': self.item_id,
             'user_id': self.user_id,
             'content': self.content,
             'is_correct': self.is_correct,

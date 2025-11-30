@@ -4,7 +4,7 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
       <h1 class="text-3xl font-bold text-gray-900">Question Bank</h1>
       <n-space>
-        <n-button @click="handleRefresh" :loading="questionStore.loading">
+        <n-button @click="handleRefresh" :loading="itemStore.loading">
           <template #icon>
             <n-icon><RefreshIcon /></n-icon>
           </template>
@@ -24,19 +24,19 @@
 
     <!-- Loading State -->
     <LoadingSpinner 
-      v-if="questionStore.loading && !questionStore.questions.length" 
+      v-if="itemStore.loading && !itemStore.items.length" 
       text="Loading questions..." 
       class="my-12"
     />
 
     <!-- Error State -->
-    <div v-else-if="questionStore.error" class="bg-red-50 border-l-4 border-error p-4 mb-6">
-      <p class="text-sm text-error">{{ questionStore.error }}</p>
+    <div v-else-if="itemStore.error" class="bg-red-50 border-l-4 border-error p-4 mb-6">
+      <p class="text-sm text-error">{{ itemStore.error }}</p>
     </div>
 
     <!-- Empty State -->
     <EmptyState
-      v-else-if="questionStore.questions.length === 0"
+      v-else-if="itemStore.items.length === 0"
       icon="📚"
       title="No questions found"
       description="Get started by uploading your first question."
@@ -48,18 +48,18 @@
     <div v-else>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <QuestionCard
-          v-for="question in questionStore.questions"
-          :key="question.id"
-          :question="question"
-          @click="handleQuestionClick"
+          v-for="item in itemStore.items"
+          :key="item.id"
+          :item="item"
+          @click="handleItemClick"
         />
       </div>
       
       <!-- Pagination -->
       <div class="flex justify-center">
         <n-pagination
-          v-model:page="questionStore.pagination.page"
-          :page-count="questionStore.pagination.pages"
+          v-model:page="itemStore.pagination.page"
+          :page-count="itemStore.pagination.pages"
           @update:page="changePage"
           size="large"
         />
@@ -71,7 +71,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useQuestionStore } from '../../stores/question'
+import { useItemStore } from '../../stores/items'
 import { NButton, NSpace, NIcon, NPagination } from 'naive-ui'
 import { RefreshOutline as RefreshIcon } from '@vicons/ionicons5'
 import QuestionFilters from '../../components/QuestionFilters.vue'
@@ -80,9 +80,10 @@ import LoadingSpinner from '../../components/LoadingSpinner.vue'
 import EmptyState from '../../components/EmptyState.vue'
 
 const router = useRouter()
-const questionStore = useQuestionStore()
+const itemStore = useItemStore()
 
 const filters = ref({
+  collection_id: null,
   subject: null,
   difficulty: null,
   status: null,
@@ -96,21 +97,21 @@ onMounted(() => {
 })
 
 const handleRefresh = () => {
-  questionStore.fetchQuestions({
+  itemStore.fetchItems({
     page: 1,
     ...filters.value
   })
 }
 
 const handleFilterChange = () => {
-  questionStore.fetchQuestions({
+  itemStore.fetchItems({
     page: 1,
     ...filters.value
   })
 }
 
 const changePage = (page) => {
-  questionStore.fetchQuestions({
+  itemStore.fetchItems({
     page,
     ...filters.value
   })
@@ -118,7 +119,7 @@ const changePage = (page) => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-const handleQuestionClick = (question) => {
-  router.push(`/questions/${question.id}`)
+const handleItemClick = (item) => {
+  router.push(`/questions/${item.id}`)
 }
 </script>

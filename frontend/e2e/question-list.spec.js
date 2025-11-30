@@ -21,8 +21,7 @@ test.describe('Question List', () => {
         await page.click('[data-testid="subject-filter"]')
 
         // Select MATHS option (Naive UI renders options in a portal, usually in body)
-        // We look for the option with text 'Maths' (the label)
-        await page.click('.n-base-select-option:has-text("Maths")')
+        await page.click('.n-base-select-option:has-text("MATHS")')
 
         // Wait for filtered results
         await page.waitForTimeout(1000)
@@ -48,7 +47,7 @@ test.describe('Question List', () => {
         // Verify stars on first card
         const cards = page.locator('[data-testid="question-card"]')
         if (await cards.count() > 0) {
-            const stars = await cards.first().locator('text=⭐⭐⭐⭐⭐').innerText()
+            const stars = await cards.first().locator('.text-sm').nth(1).innerText()
             expect(stars).toContain('⭐⭐⭐⭐⭐')
         }
     })

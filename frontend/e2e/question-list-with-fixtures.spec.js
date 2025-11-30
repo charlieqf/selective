@@ -22,7 +22,12 @@ test.describe('Question List with Seed Data', () => {
         await page.click('[data-testid="subject-filter"]')
 
         // Select MATHS option
-        await page.click('.n-base-select-option:has-text("Maths")')
+        // Debug: print all options
+        await page.waitForSelector('.n-base-select-option')
+        const options = await page.locator('.n-base-select-option').allInnerTexts()
+        console.log('DEBUG: Filter options found:', options)
+
+        await page.click('.n-base-select-option:has-text("MATHS")')
 
         // Wait for filtered results
         await page.waitForTimeout(1000)
@@ -33,7 +38,7 @@ test.describe('Question List with Seed Data', () => {
         expect(count).toBeGreaterThan(0)
 
         // Check first card's subject
-        const firstCardSubject = await cards.first().locator('.text-primary-600').innerText()
+        const firstCardSubject = await cards.first().locator('[data-testid="card-subject"]').innerText()
         expect(firstCardSubject).toBe('MATHS')
     })
 

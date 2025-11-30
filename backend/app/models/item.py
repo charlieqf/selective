@@ -2,14 +2,19 @@ from app import db
 from datetime import datetime
 import json
 
-class Question(db.Model):
-    __tablename__ = 'questions'
+class Item(db.Model):
+    __tablename__ = 'items'
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200))  # Optional title
     
     # Core Fields
-    subject = db.Column(db.String(50), nullable=False, index=True)  # READING, WRITING, MATHS, THINKING_SKILLS
+    # subject kept for migration/compatibility, will be deprecated
+    subject = db.Column(db.String(50), nullable=True, index=True) 
+    
+    # New: Collection Relationship
+    collection_id = db.Column(db.Integer, db.ForeignKey('collections.id'), nullable=True)
+    
     difficulty = db.Column(db.Integer, default=3)  # 1-5, default 3
     status = db.Column(db.String(20), default='UNANSWERED')  # UNANSWERED, ANSWERED, MASTERED, NEED_REVIEW
     
@@ -42,7 +47,8 @@ class Question(db.Model):
         return {
             'id': self.id,
             'title': self.title,
-            'subject': self.subject,
+            'subject': self.subject, # Legacy field
+            'collection_id': self.collection_id, # New field
             'difficulty': self.difficulty,
             'status': self.status,
             'images': self.get_images(),

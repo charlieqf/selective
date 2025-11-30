@@ -1,23 +1,22 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useMessage, NForm, NFormItem, NInput, NSelect, NButton, NCard, NSpace } from 'naive-ui'
-import { useQuestionStore } from '../../stores/question'
-import { useRoute } from 'vue-router'
-import ImageUploader from '../../components/ImageUploader.vue'  // 复用Week 3组件
-
+import { useItemStore } from '../../stores/items'
+import { useCollectionStore } from '../../stores/collections'
+import ImageUploader from '../../components/ImageUploader.vue'
 import uploadApi from '../../api/upload'
 
 const route = useRoute()
-
 const router = useRouter()
 const message = useMessage()
-const questionStore = useQuestionStore()
+const itemStore = useItemStore()
+const collectionStore = useCollectionStore()
 
 const formRef = ref(null)
 const loading = ref(false)
 const isEditMode = ref(false)
-const questionId = ref(null)
+const itemId = ref(null)
 
 // ImageUploader会自动上传并emit {url, public_id}[]格式
 const uploadedImages = ref([])
@@ -25,44 +24,45 @@ const initialImages = ref([]) // Track original state for cleanup
 
 const model = ref({
   title: '',
-  subject: null,
+  collection_id: null,
   difficulty: 3,
   content_text: ''
 })
 
-const subjectOptions = [
-  { label: 'Reading', value: 'READING' },
-  { label: 'Writing', value: 'WRITING' },
-  { label: 'Maths', value: 'MATHS' },
-  { label: 'Thinking Skills', value: 'THINKING_SKILLS' }
-]
+const collectionOptions = computed(() => {
+  return collectionStore.activeCollections.map(c => ({
+    label: c.name,
+    value: c.id
+  }))
+})
 
 const rules = {
-  subject: {
+  collection_id: {
+    type: 'number',
     required: true,
     message: 'Please select a subject',
     trigger: 'change'
   }
 }
 
-// Initialize for Edit Mode
-import { onMounted } from 'vue'
-
 onMounted(async () => {
+  // Fetch collections
+  await collectionStore.fetchCollections()
+
   if (route.params.id) {
     isEditMode.value = true
-    questionId.value = route.params.id
+    itemId.value = route.params.id
     loading.value = true
     try {
-      const question = await questionStore.getQuestion(questionId.value)
+      const item = await itemStore.getItem(itemId.value)
       model.value = {
-        title: question.title,
-        subject: question.subject,
-        difficulty: question.difficulty,
-        content_text: question.content_text
+        title: item.title,
+        collection_id: item.collection_id,
+        difficulty: item.difficulty,
+        content_text: item.content_text
       }
       // Transform images for uploader
-      uploadedImages.value = question.images || []
+      uploadedImages.value = item.images || []
       initialImages.value = JSON.parse(JSON.stringify(uploadedImages.value))
     } catch (error) {
       message.error('Failed to load question')
@@ -85,17 +85,17 @@ async function handleSubmit() {
     loading.value = true
     
     // uploadedImages已经是{url, public_id}格式,直接使用
-    const questionData = {
+    const itemData = {
       ...model.value,
       images: uploadedImages.value
     }
     
     if (isEditMode.value) {
-      await questionStore.updateQuestion(questionId.value, questionData)
+      await itemStore.updateItem(itemId.value, itemData)
       message.success('Question updated successfully')
-      router.push(`/questions/${questionId.value}`)
+      router.push(`/questions/${itemId.value}`)
     } else {
-      await questionStore.createQuestion(questionData)
+      await itemStore.createItem(itemData)
       message.success('Question uploaded successfully')
       router.push('/questions')
     }
@@ -165,9 +165,9 @@ async function handleCancel() {
           <n-input v-model:value="model.title" placeholder="e.g., Year 2023 Question 15" />
         </n-form-item>
 
-        <!-- 科目 -->
-        <n-form-item label="Subject" path="subject">
-          <n-select v-model:value="model.subject" :options="subjectOptions" placeholder="Select subject" />
+        <!-- Subject (Collection) -->
+        <n-form-item label="Subject" path="collection_id">
+          <n-select v-model:value="model.collection_id" :options="collectionOptions" placeholder="Select subject" />
         </n-form-item>
 
         <!-- 难度 -->

@@ -1,23 +1,24 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
-from app.models.question import Question
+from app.models.item import Item
 from app.models.answer import Answer
 from app.models.user import User
 from sqlalchemy import func
 
 bp = Blueprint('answers', __name__, url_prefix='/api')
 
-@bp.route('/questions/<int:question_id>/answers', methods=['POST'])
+@bp.route('/items/<int:item_id>/answers', methods=['POST'])
 @jwt_required()
-def submit_answer(question_id):
+def submit_answer(item_id):
+    # Logic uses Item
     current_user_id = get_jwt_identity()
     data = request.get_json()
     
-    question = Question.query.get_or_404(question_id)
+    item = Item.query.get_or_404(item_id)
     
-    # Security Check: Ensure user owns the question
-    if str(question.author_id) != str(current_user_id):
+    # Security Check: Ensure user owns the item
+    if str(item.author_id) != str(current_user_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     # Validate input
@@ -30,7 +31,7 @@ def submit_answer(question_id):
     
     # Create Answer record
     answer = Answer(
-        question_id=question_id,
+        item_id=item_id,
         user_id=current_user_id,
         content=content,
         is_correct=is_correct,
@@ -38,54 +39,51 @@ def submit_answer(question_id):
     )
     db.session.add(answer)
     
-    # Update Question stats
+    # Update Item stats
     db.session.flush() # Ensure the new answer is counted
     
-    total_attempts = Answer.query.filter_by(question_id=question_id).count()
-    total_correct = Answer.query.filter_by(question_id=question_id, is_correct=True).count()
+    total_attempts = Answer.query.filter_by(item_id=item_id).count()
+    total_correct = Answer.query.filter_by(item_id=item_id, is_correct=True).count()
     
-    question.attempts = total_attempts
+    item.attempts = total_attempts
     if total_attempts > 0:
-        question.success_rate = round((total_correct / total_attempts) * 100.0, 1)
+        item.success_rate = round((total_correct / total_attempts) * 100.0, 1)
     else:
-        question.success_rate = 0.0
+        item.success_rate = 0.0
     
-    # Update Question status logic
-    # MVP Logic:
-    # - If Correct: NEED_REVIEW -> MASTERED (or ANSWERED -> MASTERED)
-    # - If Incorrect: * -> NEED_REVIEW
+    # Update Item status logic
     if is_correct:
-        question.status = 'MASTERED'
+        item.status = 'MASTERED'
     else:
-        question.status = 'NEED_REVIEW'
+        item.status = 'NEED_REVIEW'
     
     db.session.commit()
     
     return jsonify({
         'message': 'Answer submitted successfully',
         'answer': answer.to_dict(),
-        'question_status': question.status
+        'item_status': item.status
     }), 201
 
-@bp.route('/questions/<int:question_id>/answers', methods=['GET'])
+@bp.route('/items/<int:item_id>/answers', methods=['GET'])
 @jwt_required()
-def get_answer_history(question_id):
+def get_answer_history(item_id):
     current_user_id = get_jwt_identity()
     
-    # Ensure question exists and belongs to user
-    question = Question.query.get_or_404(question_id)
+    # Ensure item exists and belongs to user
+    item = Item.query.get_or_404(item_id)
     
-    if str(question.author_id) != str(current_user_id):
+    if str(item.author_id) != str(current_user_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     answers = Answer.query.filter_by(
-        question_id=question_id, 
+        item_id=item_id, 
         user_id=current_user_id
     ).order_by(Answer.created_at.desc()).all()
     
     return jsonify([a.to_dict() for a in answers]), 200
 
-@bp.route('/questions/review-session', methods=['GET'])
+@bp.route('/items/review-session', methods=['GET'])
 @jwt_required()
 def get_review_session():
     current_user_id = get_jwt_identity()
@@ -94,7 +92,7 @@ def get_review_session():
     limit = request.args.get('limit', 10, type=int)
     subject = request.args.get('subject')
     
-    query = Question.query.filter_by(
+    query = Item.query.filter_by(
         author_id=current_user_id,
         status='NEED_REVIEW'
     )
@@ -103,6 +101,6 @@ def get_review_session():
         query = query.filter_by(subject=subject)
         
     # Randomize and limit
-    questions = query.order_by(func.random()).limit(limit).all()
+    items = query.order_by(func.random()).limit(limit).all()
     
-    return jsonify([q.to_dict() for q in questions]), 200
+    return jsonify([q.to_dict() for q in items]), 200

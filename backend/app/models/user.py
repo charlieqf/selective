@@ -13,7 +13,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
-    questions = db.relationship('Question', backref='author', lazy='dynamic')
+    items = db.relationship('Item', backref='author', lazy='dynamic')
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

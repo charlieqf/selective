@@ -1,16 +1,16 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useQuestionStore } from '../../stores/question'
+import { useItemStore } from '../../stores/items'
 import { useAuthStore } from '../../stores/auth'
-import questionsApi from '@/api/questions'
+import itemsApi from '@/api/items'
 import LoadingSpinner from '../../components/LoadingSpinner.vue'
 import AnswerSection from '../../components/AnswerSection.vue'
 import { NCard, NSpace, NTag, NButton, NCarousel, NEmpty, useMessage } from 'naive-ui'
 
 const route = useRoute()
 const router = useRouter()
-const questionStore = useQuestionStore()
+const itemStore = useItemStore()
 const authStore = useAuthStore()
 const message = useMessage()
 const answerHistory = ref([])
@@ -21,7 +21,7 @@ watch(
   () => route.params.id,
   async (newId) => {
     if (newId) {
-      await questionStore.getQuestion(newId)
+      await itemStore.getItem(newId)
       fetchHistory(newId)
     }
   },
@@ -31,7 +31,7 @@ watch(
 async function fetchHistory(id) {
   loadingHistory.value = true
   try {
-    const response = await questionsApi.getAnswerHistory(id)
+    const response = await itemsApi.getAnswerHistory(id)
     answerHistory.value = response.data
   } catch (error) {
     console.error('Failed to fetch history', error)
@@ -40,15 +40,15 @@ async function fetchHistory(id) {
   }
 }
 
-const question = computed(() => questionStore.currentQuestion)
+const item = computed(() => itemStore.currentItem)
 
 const difficultyStars = computed(() => {
-  if (!question.value) return ''
-  return '⭐'.repeat(question.value.difficulty || 3)
+  if (!item.value) return ''
+  return '⭐'.repeat(item.value.difficulty || 3)
 })
 
 const statusColor = computed(() => {
-  const status = question.value?.status
+  const status = item.value?.status
   if (!status) return 'default'
   const colorMap = {
     'UNANSWERED': 'default',
@@ -60,7 +60,7 @@ const statusColor = computed(() => {
 })
 
 const statusLabel = computed(() => {
-  const status = question.value?.status
+  const status = item.value?.status
   if (!status) return 'Unknown'
   const labelMap = {
     'UNANSWERED': 'Unanswered',
@@ -72,7 +72,7 @@ const statusLabel = computed(() => {
 })
 
 const canEdit = computed(() => {
-  return question.value?.author_id === authStore.user?.id
+  return item.value?.author_id === authStore.user?.id
 })
 
 function handleBack() {
@@ -86,7 +86,7 @@ function handleEdit() {
 async function handleDelete() {
   if (confirm('Are you sure you want to delete this question?')) {
     try {
-      await questionStore.deleteQuestion(route.params.id)
+      await itemStore.deleteItem(route.params.id)
       message.success('Question deleted successfully')
       router.push('/questions')
     } catch (error) {
@@ -96,8 +96,8 @@ async function handleDelete() {
 }
 
 function handleAnswerSubmitted(result) {
-  // Refresh question data to update status
-  questionStore.getQuestion(route.params.id)
+  // Refresh item data to update status
+  itemStore.getItem(route.params.id)
   // Refresh history
   fetchHistory(route.params.id)
 }
@@ -106,16 +106,16 @@ function handleAnswerSubmitted(result) {
 <template>
   <div class="container max-w-4xl mx-auto py-6">
     <!-- Loading State -->
-    <LoadingSpinner v-if="questionStore.loading && !question" text="Loading question..." class="my-12" />
+    <LoadingSpinner v-if="itemStore.loading && !item" text="Loading question..." class="my-12" />
 
     <!-- Error State -->
-    <div v-else-if="questionStore.error" class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-      <p class="text-sm text-red-700">{{ questionStore.error }}</p>
+    <div v-else-if="itemStore.error" class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+      <p class="text-sm text-red-700">{{ itemStore.error }}</p>
       <n-button @click="handleBack" class="mt-4">Back to Questions</n-button>
     </div>
 
     <!-- Question Content -->
-    <template v-else-if="question">
+    <template v-else-if="item">
       <!-- Header -->
       <div class="mb-6">
         <div class="flex items-center justify-between mb-4">
@@ -127,12 +127,12 @@ function handleAnswerSubmitted(result) {
         </div>
         
         <h1 class="text-3xl font-bold mb-2" data-testid="question-title">
-          {{ question.title || `Question #${question.id}` }}
+          {{ item.title || `Question #${item.id}` }}
         </h1>
         
         <n-space>
           <n-tag :type="statusColor" data-testid="status-tag">{{ statusLabel }}</n-tag>
-          <n-tag data-testid="subject-tag">{{ question.subject }}</n-tag>
+          <n-tag data-testid="subject-tag">{{ item.subject }}</n-tag>
           <n-tag data-testid="difficulty-tag">{{ difficultyStars }}</n-tag>
         </n-space>
       </div>
@@ -140,12 +140,12 @@ function handleAnswerSubmitted(result) {
       <!-- Images -->
       <n-card title="Question Images" class="mb-6">
         <n-carousel
-          v-if="question.images && question.images.length > 0"
+          v-if="item.images && item.images.length > 0"
           show-arrow
           draggable
         >
           <img
-            v-for="(image, index) in question.images"
+            v-for="(image, index) in item.images"
             :key="index"
             :src="image.url"
             class="w-full h-auto object-contain max-h-96"
@@ -156,28 +156,28 @@ function handleAnswerSubmitted(result) {
       </n-card>
 
       <!-- Description -->
-      <n-card v-if="question.content_text" title="Description" class="mb-6">
-        <p class="whitespace-pre-wrap">{{ question.content_text }}</p>
+      <n-card v-if="item.content_text" title="Description" class="mb-6">
+        <p class="whitespace-pre-wrap">{{ item.content_text }}</p>
       </n-card>
 
       <!-- Metadata -->
       <n-card title="Question Information" class="mb-6">
         <div class="space-y-2">
-          <div><strong>Subject:</strong> {{ question.subject }}</div>
-          <div><strong>Difficulty:</strong> {{ difficultyStars }} ({{ question.difficulty }}/5)</div>
+          <div><strong>Subject:</strong> {{ item.subject }}</div>
+          <div><strong>Difficulty:</strong> {{ difficultyStars }} ({{ item.difficulty }}/5)</div>
           <div><strong>Status:</strong> {{ statusLabel }}</div>
-          <div><strong>Created:</strong> {{ new Date(question.created_at).toLocaleDateString() }}</div>
-          <div v-if="question.updated_at !== question.created_at">
-            <strong>Updated:</strong> {{ new Date(question.updated_at).toLocaleDateString() }}
+          <div><strong>Created:</strong> {{ new Date(item.created_at).toLocaleDateString() }}</div>
+          <div v-if="item.updated_at !== item.created_at">
+            <strong>Updated:</strong> {{ new Date(item.updated_at).toLocaleDateString() }}
           </div>
         </div>
       </n-card>
 
       <!-- Answer Section -->
       <AnswerSection 
-        v-if="question.status !== 'MASTERED'"
-        :key="question.id"
-        :question-id="question.id"
+        v-if="item.status !== 'MASTERED'"
+        :key="item.id"
+        :item-id="item.id"
         @answer-submitted="handleAnswerSubmitted"
       />
 

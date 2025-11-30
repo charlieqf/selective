@@ -4,7 +4,7 @@ Run this before running Playwright tests to ensure data exists
 """
 from app import create_app, db
 from app.models.user import User
-from app.models.question import Question
+from app.models.item import Item
 from werkzeug.security import generate_password_hash
 
 def seed_test_data():
@@ -28,32 +28,55 @@ def seed_test_data():
         else:
             print("✓ testuser already exists")
         
-        # Create some test questions if they don't exist
-        question_count = Question.query.filter_by(author_id=user.id).count()
+        # Create collections if they don't exist
+        from app.models.collection import Collection
         
-        if question_count < 5:
-            print(f"Creating test questions (current: {question_count})...")
+        subjects = ['MATHS', 'READING', 'WRITING', 'THINKING_SKILLS']
+        collections = {}
+        
+        for subject_name in subjects:
+            collection = Collection.query.filter_by(user_id=user.id, name=subject_name, is_deleted=False).first()
+            if not collection:
+                print(f"Creating collection {subject_name}...")
+                collection = Collection(
+                    user_id=user.id,
+                    name=subject_name,
+                    type='SUBJECT'
+                )
+                db.session.add(collection)
+                db.session.flush() # Get ID
+            collections[subject_name] = collection
             
-            subjects = ['MATHS', 'READING', 'WRITING', 'THINKING_SKILLS']
-            for i in range(5 - question_count):
-                question = Question(
+        db.session.commit()
+        print("✓ Collections ready")
+
+        # Create some test items if they don't exist
+        item_count = Item.query.filter_by(author_id=user.id).count()
+        
+        if item_count < 5:
+            print(f"Creating test items (current: {item_count})...")
+            
+            for i in range(5 - item_count):
+                subject_name = subjects[i % len(subjects)]
+                item = Item(
                     author_id=user.id,
-                    subject=subjects[i % len(subjects)],
+                    subject=subject_name, # Keep legacy field for now
+                    collection_id=collections[subject_name].id,
                     difficulty=((i % 5) + 1),
-                    title=f'Test Question {i + question_count + 1}',
-                    content_text=f'This is test question content {i + question_count + 1}',
+                    title=f'Test Question {i + item_count + 1}',
+                    content_text=f'This is test question content {i + item_count + 1}',
                     images=[]
                 )
-                db.session.add(question)
+                db.session.add(item)
             
             db.session.commit()
-            print(f"✓ Created {5 - question_count} test questions")
+            print(f"✓ Created {5 - item_count} test items")
         else:
-            print(f"✓ Already have {question_count} test questions")
+            print(f"✓ Already have {item_count} test items")
         
         print("\n✅ Test data ready!")
         print(f"   User: testuser / password")
-        print(f"   Questions: {Question.query.filter_by(author_id=user.id).count()}")
+        print(f"   Items: {Item.query.filter_by(author_id=user.id).count()}")
 
 if __name__ == '__main__':
     seed_test_data()

@@ -1,0 +1,122 @@
+=== TABLE: alembic_version ===
+  Columns:
+    - version_num (VARCHAR(32)) Nullable: False
+  Primary Key: ['version_num']
+  Foreign Keys:
+  Indexes:
+  Sample Data (First 3 rows):
+    Columns: ['version_num']
+    {'version_num': '7a3a46c08d21'}
+
+
+=== TABLE: answers ===
+  Columns:
+    - id (INTEGER) Nullable: False
+    - user_id (INTEGER) Nullable: False
+    - content (TEXT) Nullable: True
+    - is_correct (TINYINT) Nullable: True
+    - duration_seconds (INTEGER) Nullable: True
+    - created_at (DATETIME) Nullable: True
+    - item_id (INTEGER) Nullable: False
+  Primary Key: ['id']
+  Foreign Keys:
+    - fk_2: ['user_id'] -> users.['id']
+    - fk_3: ['item_id'] -> items.['id']
+  Indexes:
+    - fk_1: ['user_id'] Unique: False
+    - fk_3: ['item_id'] Unique: False
+  Sample Data (First 3 rows):
+    Columns: ['id', 'user_id', 'content', 'is_correct', 'duration_seconds', 'created_at', 'item_id']
+    {'id': '1', 'user_id': '90001', 'content': '5', 'is_correct': '0', 'duration_seconds': '10', 'created_at': '2025-11-29T02:06:39', 'item_id': '60006'}
+    {'id': '2', 'user_id': '90001', 'content': '4', 'is_correct': '1', 'duration_seconds': '5', 'created_at': '2025-11-29T02:06:45', 'item_id': '60006'}
+
+
+=== TABLE: collections ===
+  Columns:
+    - id (INTEGER) Nullable: False
+    - user_id (INTEGER) Nullable: False
+    - name (VARCHAR(100)) Nullable: False
+    - icon (VARCHAR(50)) Nullable: True
+    - color (VARCHAR(20)) Nullable: True
+    - is_deleted (TINYINT) Nullable: True
+    - deleted_at (DATETIME) Nullable: True
+    - created_at (DATETIME) Nullable: True
+    - updated_at (DATETIME) Nullable: True
+    - active_name (VARCHAR(100)) Nullable: True
+    - type (VARCHAR(20)) Nullable: False
+  Primary Key: ['id']
+  Foreign Keys:
+    - fk_1: ['user_id'] -> users.['id']
+  Indexes:
+    - ix_collections_is_deleted: ['is_deleted'] Unique: False
+    - uq_user_active_collection: ['user_id', 'active_name'] Unique: True
+  Sample Data (First 3 rows):
+    Columns: ['id', 'user_id', 'name', 'icon', 'color', 'is_deleted', 'deleted_at', 'created_at', 'updated_at', 'active_name', 'type']
+    {'id': '1', 'user_id': '1', 'name': 'READING', 'icon': 'book', 'color': '#f97316', 'is_deleted': '0', 'deleted_at': 'None', 'created_at': '2025-11-29T02:06:01', 'updated_at': '2025-11-29T02:06:01', 'active_name': 'READING', 'type': 'SUBJECT'}
+    {'id': '2', 'user_id': '1', 'name': 'WRITING', 'icon': 'pencil', 'color': '#a855f7', 'is_deleted': '0', 'deleted_at': 'None', 'created_at': '2025-11-29T02:06:01', 'updated_at': '2025-11-29T02:06:01', 'active_name': 'WRITING', 'type': 'SUBJECT'}
+    {'id': '3', 'user_id': '1', 'name': 'MATHS', 'icon': 'calculator', 'color': '#10b981', 'is_deleted': '0', 'deleted_at': 'None', 'created_at': '2025-11-29T02:06:02', 'updated_at': '2025-11-29T02:06:02', 'active_name': 'MATHS', 'type': 'SUBJECT'}
+
+
+=== TABLE: items ===
+  Columns:
+    - id (INTEGER) Nullable: False
+    - title (VARCHAR(200)) Nullable: True
+    - subject (VARCHAR(50)) Nullable: True
+    - collection_id (INTEGER) Nullable: True
+    - difficulty (INTEGER) Nullable: True
+    - status (VARCHAR(20)) Nullable: True
+    - images (JSON) Nullable: True
+    - content_text (TEXT) Nullable: True
+    - author_id (INTEGER) Nullable: True
+    - created_at (DATETIME) Nullable: True
+    - updated_at (DATETIME) Nullable: True
+    - attempts (INTEGER) Nullable: True
+    - success_rate (FLOAT) Nullable: True
+  Primary Key: ['id']
+  Foreign Keys:
+    - fk_1: ['author_id'] -> users.['id']
+    - fk_2: ['collection_id'] -> collections.['id']
+  Indexes:
+    - fk_1: ['author_id'] Unique: False
+    - fk_2: ['collection_id'] Unique: False
+    - ix_items_subject: ['subject'] Unique: False
+  Sample Data (First 3 rows):
+    Columns: ['id', 'title', 'subject', 'collection_id', 'difficulty', 'status', 'images', 'content_text', 'author_id', 'created_at', 'updated_at', 'attempts', 'success_rate']
+    {'id': '1', 'title': 'test', 'subject': 'WRITING', 'collection_id': '2', 'difficulty': '3', 'status': 'UNANSWERED', 'images': '[{"public_id": "selective-questions/dddmri8cesqzifqdfjky", "url": "https://res.cloudinary.com/dsrb7j7rm/image/upload/v1764296318/selective-questions/dddmri8cesqzifqdfjky.png"}, {"public_id": "selective-questions/iktkzdjpalgl7xbuml1r", "url": "https://res.cloudinary.com/dsrb7j7rm/image/upload/v1764296328/selective-questions/iktkzdjpalgl7xbuml1r.png"}]', 'content_text': 'test', 'author_id': '1', 'created_at': '2025-11-28T02:19:02', 'updated_at': '2025-11-29T02:06:02', 'attempts': '0', 'success_rate': '0.0'}
+    {'id': '30001', 'title': 'Test Question for Answering', 'subject': 'MATHS', 'collection_id': '7', 'difficulty': '3', 'status': 'UNANSWERED', 'images': '[]', 'content_text': 'What is 2+2?', 'author_id': '30001', 'created_at': '2025-11-28T03:10:35', 'updated_at': '2025-11-29T02:06:04', 'attempts': '0', 'success_rate': '0.0'}
+    {'id': '30002', 'title': 'Test Question for Answering', 'subject': 'MATHS', 'collection_id': '7', 'difficulty': '3', 'status': 'MASTERED', 'images': '[]', 'content_text': 'What is 2+2?', 'author_id': '30001', 'created_at': '2025-11-28T03:11:20', 'updated_at': '2025-11-29T02:06:04', 'attempts': '2', 'success_rate': '0.0'}
+
+
+=== TABLE: pending_uploads ===
+  Columns:
+    - public_id (VARCHAR(255)) Nullable: False
+    - user_id (INTEGER) Nullable: False
+    - created_at (DATETIME) Nullable: False
+  Primary Key: ['public_id']
+  Foreign Keys:
+    - fk_11: ['user_id'] -> users.['id']
+  Indexes:
+    - fk_10: ['user_id'] Unique: False
+  Sample Data (First 3 rows):
+    (No data)
+
+
+=== TABLE: users ===
+  Columns:
+    - id (INTEGER) Nullable: False
+    - username (VARCHAR(64)) Nullable: False
+    - email (VARCHAR(120)) Nullable: False
+    - password_hash (VARCHAR(256)) Nullable: True
+    - role (VARCHAR(20)) Nullable: True
+    - created_at (DATETIME) Nullable: True
+  Primary Key: ['id']
+  Foreign Keys:
+  Indexes:
+    - ix_users_email: ['email'] Unique: True
+    - ix_users_username: ['username'] Unique: True
+  Sample Data (First 3 rows):
+    Columns: ['id', 'username', 'email', 'password_hash', 'role', 'created_at']
+    {'id': '1', 'username': 'charlieqf', 'email': 'charlieqf@gmail.com', 'password_hash': 'scrypt:32768:8:1$mVxCnKptOCVz6x8w$a780e457a2d9d2afc8811bb56f22f2cc0a16ebb0c66726d7f0c2107b0c29015948756cf2ee3493607f7105ee4a7a4e2cf99d37eead1f3811b471155f2fa8f1b9', 'role': 'student', 'created_at': '2025-11-28T02:18:21'}
+    {'id': '30001', 'username': 'test_learner', 'email': 'learner@test.com', 'password_hash': 'scrypt:32768:8:1$5RyJcpvwILFHZBAQ$1560de748648aeea71db9b4ba65bb402571f9dee95eb72d67014513c9c974a8ce2ec14f9f2136a509bc930b4da56c39b361276255b3a6eccb07e863b5d8bf8a2', 'role': 'student', 'created_at': '2025-11-28T03:10:32'}
+    {'id': '60001', 'username': 'testuser', 'email': 'test@example.com', 'password_hash': 'scrypt:32768:8:1$n0iK4HSupQYBcYBz$b1f213761715b18cf61416e54c4d4887c92562d2567001fec8508658430c8225e67d5037a558e48a99c7f67bb789d07bad5f83a449de11d037f61159c1653863', 'role': 'student', 'created_at': '2025-11-28T11:45:21'}
+

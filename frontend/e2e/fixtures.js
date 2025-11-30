@@ -31,20 +31,20 @@ export const test = base.extend({
         })
         const token = loginResponse.data.token
 
-        // Check if any questions exist
-        const questionsResponse = await axios.get(`${API_BASE}/api/questions`, {
+        // Check if any items exist
+        const itemsResponse = await axios.get(`${API_BASE}/api/items`, {
             headers: { Authorization: `Bearer ${token}` }
         })
 
-        let createdQuestions = []
+        let createdItems = []
 
-        // If no questions exist, create some test questions
-        if (questionsResponse.data.questions.length === 0) {
+        // If no items exist, create some test items
+        if (itemsResponse.data.items.length === 0) {
             const subjects = ['MATHS', 'READING', 'WRITING']
             const difficulties = [1, 2, 3, 4, 5]
 
             for (let i = 0; i < 3; i++) {
-                const questionData = {
+                const itemData = {
                     subject: subjects[i % subjects.length],
                     difficulty: difficulties[i % difficulties.length],
                     title: `Test Question ${i + 1}`,
@@ -53,22 +53,22 @@ export const test = base.extend({
                 }
 
                 const createResponse = await axios.post(
-                    `${API_BASE}/api/questions`,
-                    questionData,
+                    `${API_BASE}/api/items`,
+                    itemData,
                     { headers: { Authorization: `Bearer ${token}` } }
                 )
 
-                createdQuestions.push(createResponse.data.id)
+                createdItems.push(createResponse.data.id)
             }
         }
 
         // Provide cleanup function
         await use()
 
-        // Cleanup created questions after the test completes
-        for (const questionId of createdQuestions) {
+        // Cleanup created items after the test completes
+        for (const itemId of createdItems) {
             try {
-                await axios.delete(`${API_BASE}/api/questions/${questionId}`, {
+                await axios.delete(`${API_BASE}/api/items/${itemId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             } catch (e) {

@@ -7,8 +7,8 @@ def run_test():
     print("1. Register/Login...")
     # Register a test user
     auth_data = {
-        "username": "test_learner",
-        "email": "learner@test.com",
+        "username": "test_learner_v2",
+        "email": "learner_v2@test.com",
         "password": "password123",
         "role": "student"
     }
@@ -31,22 +31,22 @@ def run_test():
     headers = {"Authorization": f"Bearer {token}"}
     print("   Auth successful.")
 
-    print("\n2. Create a Question...")
-    # Create a dummy question
-    q_data = {
-        "title": "Test Question for Answering",
+    print("\n2. Create an Item...")
+    # Create a dummy item
+    item_data = {
+        "title": "Test Item for Answering",
         "subject": "MATHS",
         "difficulty": 3,
         "content_text": "What is 2+2?",
         "images": [] # Optional for this test
     }
-    resp = requests.post(f"{BASE_URL}/questions", json=q_data, headers=headers)
+    resp = requests.post(f"{BASE_URL}/items", json=item_data, headers=headers)
     if resp.status_code != 201:
-        print(f"Create question failed: {resp.text}")
+        print(f"Create item failed: {resp.text}")
         return
     
-    q_id = resp.json()['id']
-    print(f"   Question created. ID: {q_id}")
+    item_id = resp.json()['id']
+    print(f"   Item created. ID: {item_id}")
 
     print("\n3. Submit INCORRECT Answer...")
     ans_data = {
@@ -54,12 +54,12 @@ def run_test():
         "content": "5",
         "duration_seconds": 10
     }
-    resp = requests.post(f"{BASE_URL}/questions/{q_id}/answers", json=ans_data, headers=headers)
+    resp = requests.post(f"{BASE_URL}/items/{item_id}/answers", json=ans_data, headers=headers)
     if resp.status_code != 201:
         print(f"Submit answer failed: {resp.text}")
         return
     
-    status = resp.json()['question_status']
+    status = resp.json()['item_status']
     print(f"   Answer submitted. New Status: {status}")
     if status != 'NEED_REVIEW':
         print("   FAIL: Status should be NEED_REVIEW")
@@ -67,19 +67,19 @@ def run_test():
         print("   PASS: Status is NEED_REVIEW")
 
     print("\n4. Get Review Session...")
-    resp = requests.get(f"{BASE_URL}/questions/review-session", headers=headers)
+    resp = requests.get(f"{BASE_URL}/items/review-session", headers=headers)
     if resp.status_code != 200:
         print(f"Get review session failed: {resp.text}")
         return
     
     review_list = resp.json()
-    print(f"   Got {len(review_list)} questions for review.")
+    print(f"   Got {len(review_list)} items for review.")
     
-    found = any(q['id'] == q_id for q in review_list)
+    found = any(i['id'] == item_id for i in review_list)
     if found:
-        print("   PASS: Question found in review session.")
+        print("   PASS: Item found in review session.")
     else:
-        print("   FAIL: Question NOT found in review session.")
+        print("   FAIL: Item NOT found in review session.")
 
     print("\n5. Submit CORRECT Answer...")
     ans_data = {
@@ -87,9 +87,9 @@ def run_test():
         "content": "4",
         "duration_seconds": 5
     }
-    resp = requests.post(f"{BASE_URL}/questions/{q_id}/answers", json=ans_data, headers=headers)
+    resp = requests.post(f"{BASE_URL}/items/{item_id}/answers", json=ans_data, headers=headers)
     
-    status = resp.json()['question_status']
+    status = resp.json()['item_status']
     print(f"   Answer submitted. New Status: {status}")
     if status != 'MASTERED':
         print("   FAIL: Status should be MASTERED")

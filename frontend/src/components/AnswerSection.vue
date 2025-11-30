@@ -2,10 +2,10 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { NCard, NButton, NSpace, NTag, NAlert } from 'naive-ui'
 import { useMessage } from 'naive-ui'
-import questionsApi from '@/api/questions'
+import itemsApi from '@/api/items'
 
 const props = defineProps({
-  questionId: {
+  itemId: {
     type: [String, Number],
     required: true
   }
@@ -71,7 +71,7 @@ async function handleSubmit(isCorrect) {
       duration_seconds: timer.value
     }
     
-    const response = await questionsApi.submitAnswer(props.questionId, data)
+    const response = await itemsApi.submitAnswer(props.itemId, data)
     
     if (isCorrect) {
       message.success('Great job! Marked as Mastered.')

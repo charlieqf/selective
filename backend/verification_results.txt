@@ -1,0 +1,13 @@
+=== Verifying Collections ===
+User 30001 (test_learner) exists.
+User 30001 has 4 collections:
+  - ID: 5, Name: READING
+  - ID: 6, Name: WRITING
+  - ID: 7, Name: MATHS
+  - ID: 8, Name: THINKING_SKILLS
+Collection 7 exists: Name=MATHS, UserID=30001
+
+=== Verifying Pending Uploads ===
+Item 1 exists. Images: 2
+  [WARNING] PendingUpload exists for active image: selective-questions/dddmri8cesqzifqdfjky
+  [WARNING] PendingUpload exists for active image: selective-questions/iktkzdjpalgl7xbuml1r

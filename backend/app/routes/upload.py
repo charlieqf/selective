@@ -4,6 +4,7 @@ import cloudinary.uploader
 import cloudinary.api
 from app import db
 from app.models.pending_upload import PendingUpload
+from app.models.item import Item
 
 bp = Blueprint('upload', __name__, url_prefix='/api/upload')
 
@@ -72,8 +73,6 @@ def upload_image():
 @bp.route('', methods=['DELETE'])
 @jwt_required()
 def delete_image():
-    from app.models.question import Question
-    
     data = request.get_json()
     public_id = data.get('public_id')
     
@@ -83,12 +82,12 @@ def delete_image():
     current_user_id = get_jwt_identity()
     
     try:
-        # Check if image belongs to user's questions
-        questions = Question.query.filter_by(author_id=current_user_id).all()
+        # Check if image belongs to user's items (formerly questions)
+        items = Item.query.filter_by(author_id=current_user_id).all()
         
         image_found = False
-        for question in questions:
-            images = question.get_images()
+        for item in items:
+            images = item.get_images()
             for img in images:
                 if img.get('public_id') == public_id:
                     image_found = True
@@ -96,7 +95,8 @@ def delete_image():
             if image_found:
                 break
         
-        # If not in questions, check pending uploads (DB-backed, multi-worker safe)
+        # If not in items, check pending uploads (DB-backed, multi-worker safe)
+        pending_upload = None
         if not image_found:
             # Verify prefix first
             if not public_id.startswith('selective-questions/'):
@@ -110,7 +110,7 @@ def delete_image():
                     return jsonify({'error': 'Unauthorized: You cannot delete this image'}), 403
                 # Don't delete from DB yet - wait for Cloudinary success
             else:
-                # Not in questions and not in pending uploads - unauthorized
+                # Not in items and not in pending uploads - unauthorized
                 return jsonify({'error': 'Unauthorized: Image not found or does not belong to you'}), 403
         
         # Delete from Cloudinary FIRST

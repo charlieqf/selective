@@ -1,6 +1,7 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { NSelect, NSpace } from 'naive-ui'
+import { useCollectionStore } from '@/stores/collections'
 
 const props = defineProps({
   filters: { type: Object, default: () => ({}) }
@@ -8,32 +9,21 @@ const props = defineProps({
 
 const emit = defineEmits(['update:filters'])
 
-const localFilters = ref({ ...props.filters })
+const filters = ref({ ...props.filters })
+const collectionStore = useCollectionStore()
 
-// 监听localFilters变化,emit给父组件
-watch(localFilters, (newFilters) => {
-  emit('update:filters', newFilters)
-}, { deep: true })
+onMounted(() => {
+  collectionStore.fetchCollections()
+})
 
-// 监听props.filters变化,同步到localFilters(实现双向绑定)
-watch(() => props.filters, (newFilters) => {
-  // Prevent infinite loop: only update if values actually changed
-  if (JSON.stringify(newFilters) !== JSON.stringify(localFilters.value)) {
-    localFilters.value = { ...newFilters }
-  }
-}, { deep: true })
-
-// 使用数据库中的大写枚举值
-const subjectOptions = [
-  { label: 'All Subjects', value: null },
-  { label: 'Reading', value: 'READING' },
-  { label: 'Writing', value: 'WRITING' },
-  { label: 'Maths', value: 'MATHS' },
-  { label: 'Thinking Skills', value: 'THINKING_SKILLS' }
-]
+const collectionOptions = computed(() => {
+  return collectionStore.activeCollections.map(c => ({
+    label: c.name,
+    value: c.id
+  }))
+})
 
 const difficultyOptions = [
-  { label: 'All Difficulties', value: null },
   { label: '⭐ (1)', value: 1 },
   { label: '⭐⭐ (2)', value: 2 },
   { label: '⭐⭐⭐ (3)', value: 3 },
@@ -42,37 +32,43 @@ const difficultyOptions = [
 ]
 
 const statusOptions = [
-  { label: 'All Status', value: null },
   { label: 'Unanswered', value: 'UNANSWERED' },
   { label: 'Answered', value: 'ANSWERED' },
   { label: 'Mastered', value: 'MASTERED' },
   { label: 'Need Review', value: 'NEED_REVIEW' }
 ]
-
-const sortOptions = [
-  { label: 'Newest First', value: { sort_by: 'created_at', sort_direction: 'desc' } },
-  { label: 'Oldest First', value: { sort_by: 'created_at', sort_direction: 'asc' } },
-  { label: 'Difficulty: Low to High', value: { sort_by: 'difficulty', sort_direction: 'asc' } },
-  { label: 'Difficulty: High to Low', value: { sort_by: 'difficulty', sort_direction: 'desc' } }
-]
 </script>
 
 <template>
-  <div class="card mb-4">
-    <n-space vertical>
-      <n-space>
-        <n-select v-model:value="localFilters.subject" :options="subjectOptions" placeholder="Subject" style="width: 200px" data-testid="subject-filter" />
-        <n-select v-model:value="localFilters.difficulty" :options="difficultyOptions" placeholder="Difficulty" style="width: 200px" data-testid="difficulty-filter" />
-        <n-select v-model:value="localFilters.status" :options="statusOptions" placeholder="Status" style="width: 200px" data-testid="status-filter" />
-        <n-select 
-          v-model:value="localFilters.sort" 
-          :options="sortOptions" 
-          placeholder="Sort by" 
-          style="width: 200px"
-          data-testid="sort-filter"
-          @update:value="(val) => { localFilters.sort_by = val.sort_by; localFilters.sort_direction = val.sort_direction }"
-        />
-      </n-space>
-    </n-space>
+  <div class="flex gap-4 mb-4">
+    <!-- Subject Filter (uses collections) -->
+    <n-select
+      v-model:value="filters.collection_id"
+      :options="collectionOptions"
+      placeholder="All Subjects"
+      clearable
+      data-testid="subject-filter"
+      @update:value="$emit('update:filters', filters)"
+    />
+    
+    <!-- Difficulty Filter -->
+    <n-select
+      v-model:value="filters.difficulty"
+      :options="difficultyOptions"
+      placeholder="All Difficulties"
+      clearable
+      data-testid="difficulty-filter"
+      @update:value="$emit('update:filters', filters)"
+    />
+    
+    <!-- Status Filter -->
+    <n-select
+      v-model:value="filters.status"
+      :options="statusOptions"
+      placeholder="All Status"
+      clearable
+      data-testid="status-filter"
+      @update:value="$emit('update:filters', filters)"
+    />
   </div>
 </template>

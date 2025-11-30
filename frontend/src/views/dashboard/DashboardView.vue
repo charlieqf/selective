@@ -16,8 +16,8 @@ onMounted(async () => {
   await analyticsStore.refreshAll()
 })
 
-function handleQuestionClick(question) {
-  router.push(`/questions/${question.id}`)
+function handleItemClick(item) {
+  router.push(`/questions/${item.id}`)
 }
 </script>
 
@@ -63,15 +63,14 @@ function handleQuestionClick(question) {
         <n-button @click="router.push('/questions')">View All Questions</n-button>
       </n-space>
 
-      <!-- 推荐题目 -->
       <div class="mb-6">
         <h2 class="text-2xl font-bold mb-4">Recommended for You</h2>
         <div v-if="analyticsStore.recommendations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <QuestionCard 
-            v-for="question in analyticsStore.recommendations" 
-            :key="question.id"
-            :question="question"
-            @click="handleQuestionClick"
+            v-for="item in analyticsStore.recommendations" 
+            :key="item.id"
+            :item="item"
+            @click="handleItemClick"
           />
         </div>
         <EmptyState 

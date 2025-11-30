@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
-import questionsApi from '@/api/questions'
+import itemsApi from '@/api/items'
 
-export const useQuestionStore = defineStore('question', {
+export const useItemStore = defineStore('items', {
     state: () => ({
-        questions: [],
-        currentQuestion: null,
+        items: [],
+        currentItem: null,
         loading: false,
         error: null,
         pagination: {
@@ -16,17 +16,17 @@ export const useQuestionStore = defineStore('question', {
     }),
 
     actions: {
-        async fetchQuestions(params = {}) {
+        async fetchItems(params = {}) {
             this.loading = true
             this.error = null
             try {
-                const response = await questionsApi.getQuestions({
+                const response = await itemsApi.getItems({
                     page: this.pagination.page,
                     per_page: this.pagination.per_page,
                     ...params
                 })
 
-                this.questions = response.data.questions
+                this.items = response.data.items
                 this.pagination = {
                     page: response.data.current_page,
                     per_page: 10, // Default or from response if API returned it
@@ -34,66 +34,66 @@ export const useQuestionStore = defineStore('question', {
                     pages: response.data.pages
                 }
             } catch (error) {
-                this.error = error.response?.data?.error || 'Failed to fetch questions'
-                console.error('Fetch questions error:', error)
+                this.error = error.response?.data?.error || 'Failed to fetch items'
+                console.error('Fetch items error:', error)
             } finally {
                 this.loading = false
             }
         },
 
-        async createQuestion(data) {
+        async createItem(data) {
             this.loading = true
             this.error = null
             try {
-                const response = await questionsApi.createQuestion(data)
+                const response = await itemsApi.createItem(data)
                 return response.data
             } catch (error) {
-                this.error = error.response?.data?.error || 'Failed to create question'
+                this.error = error.response?.data?.error || 'Failed to create item'
                 throw error
             } finally {
                 this.loading = false
             }
         },
 
-        async getQuestion(id) {
+        async getItem(id) {
             this.loading = true
             this.error = null
             try {
-                const response = await questionsApi.getQuestion(id)
-                this.currentQuestion = response.data
+                const response = await itemsApi.getItem(id)
+                this.currentItem = response.data
                 return response.data
             } catch (error) {
-                this.error = error.response?.data?.error || 'Failed to fetch question'
-                console.error('Get question error:', error)
+                this.error = error.response?.data?.error || 'Failed to fetch item'
+                console.error('Get item error:', error)
             } finally {
                 this.loading = false
             }
         },
 
-        async updateQuestion(id, data) {
+        async updateItem(id, data) {
             this.loading = true
             this.error = null
             try {
-                const response = await questionsApi.updateQuestion(id, data)
-                this.currentQuestion = response.data
+                const response = await itemsApi.updateItem(id, data)
+                this.currentItem = response.data
                 return response.data
             } catch (error) {
-                this.error = error.response?.data?.error || 'Failed to update question'
+                this.error = error.response?.data?.error || 'Failed to update item'
                 throw error
             } finally {
                 this.loading = false
             }
         },
 
-        async deleteQuestion(id) {
+        async deleteItem(id) {
             this.loading = true
             this.error = null
             try {
-                await questionsApi.deleteQuestion(id)
+                await itemsApi.deleteItem(id)
                 // Remove from list if present
-                this.questions = this.questions.filter(q => q.id !== id)
+                this.items = this.items.filter(q => q.id !== id)
             } catch (error) {
-                this.error = error.response?.data?.error || 'Failed to delete question'
+                this.error = error.response?.data?.error || 'Failed to delete item'
                 throw error
             } finally {
                 this.loading = false

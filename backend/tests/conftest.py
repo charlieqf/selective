@@ -2,16 +2,16 @@ import sys
 import os
 import pytest
 
-# 添加backend目录到Python路径
+# Add backend directory to Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
 from app.models.user import User
-from app.models.question import Question
+from app.models.item import Item
 
 @pytest.fixture
 def app():
-    """创建测试应用"""
+    """Create test app"""
     app = create_app('testing')
     with app.app_context():
         db.create_all()
@@ -21,12 +21,12 @@ def app():
 
 @pytest.fixture
 def client(app):
-    """创建测试客户端"""
+    """Create test client"""
     return app.test_client()
 
 @pytest.fixture
 def auth_headers(app, client):
-    """创建认证header"""
+    """Create auth headers"""
     with app.app_context():
         # Create a user and login
         user = User(username='testuser', email='test@example.com')
@@ -43,7 +43,7 @@ def auth_headers(app, client):
 
 @pytest.fixture
 def other_auth_headers(app, client):
-    """创建另一个用户的认证header"""
+    """Create another user's auth headers"""
     with app.app_context():
         # Create another user
         user = User(username='otheruser', email='other@example.com')

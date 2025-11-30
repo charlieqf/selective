@@ -11,12 +11,13 @@ test.describe('Authentication Flow', () => {
     })
 
     test('should register as student and auto-login', async ({ page }) => {
-        const username = `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        const randomId = Math.floor(Math.random() * 10000)
+        const username = `student${randomId}`
 
-        // Navigate to register - correct link text
+        // Navigate to register
         await page.click('text=Create account')
 
-        // Fill registration form with correct placeholders
+        // Fill registration form
         await page.fill('input[placeholder="Username"]', username)
         await page.fill('input[placeholder="Email"]', `${username}@example.com`)
         await page.fill('input[placeholder="Password"]', 'password123')
@@ -25,7 +26,7 @@ test.describe('Authentication Flow', () => {
         // Select student role
         await page.click('text=Student')
 
-        // Submit - check for actual button text
+        // Submit
         await page.click('button:has-text("Register")')
 
         // Should redirect to dashboard
@@ -33,7 +34,8 @@ test.describe('Authentication Flow', () => {
     })
 
     test('should register as parent', async ({ page }) => {
-        const username = `parent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        const randomId = Math.floor(Math.random() * 10000)
+        const username = `parent${randomId}`
 
         await page.click('text=Create account')
         await page.fill('input[placeholder="Username"]', username)

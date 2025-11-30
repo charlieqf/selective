@@ -11,21 +11,22 @@ test.describe('Question Upload', () => {
         page.on('console', msg => console.log(`BROWSER: ${msg.text()}`))
 
         // Mock upload and delete API
-        await page.route(/.*\/api\/upload/, async route => {
+        await page.route('**/api/upload', async route => {
             const request = route.request()
-            const method = request.method()
-            console.log(`Intercepted ${method} ${request.url()}`)
+            console.log(`Intercepted UPLOAD ${request.method()} ${request.url()}`)
 
-            if (method === 'POST') {
+            if (request.method() === 'POST') {
+                const response = {
+                    url: 'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg',
+                    public_id: 'sample_id'
+                }
+                console.log('Mock returning UPLOAD:', JSON.stringify(response))
                 await route.fulfill({
                     status: 200,
                     contentType: 'application/json',
-                    body: JSON.stringify({
-                        url: 'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg',
-                        public_id: 'sample_id'
-                    })
+                    body: JSON.stringify(response)
                 })
-            } else if (method === 'DELETE') {
+            } else if (request.method() === 'DELETE') {
                 await route.fulfill({
                     status: 200,
                     contentType: 'application/json',
@@ -36,13 +37,43 @@ test.describe('Question Upload', () => {
             }
         })
 
+        // Mock collections API
+        await page.route('**/api/collections', async route => {
+            console.log(`Intercepted COLLECTIONS ${route.request().method()} ${route.request().url()}`)
+            if (route.request().method() === 'GET') {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify([
+                        { id: 1, name: 'READING', icon: 'book', color: '#f97316', is_deleted: false },
+                        { id: 2, name: 'WRITING', icon: 'pencil', color: '#a855f7', is_deleted: false },
+                        { id: 3, name: 'MATHS', icon: 'calculator', color: '#10b981', is_deleted: false },
+                        { id: 4, name: 'THINKING_SKILLS', icon: 'brain', color: '#6366f1', is_deleted: false }
+                    ])
+                })
+                return
+            }
+            await route.continue()
+        })
+
         // Mock question creation API
-        await page.route('**/api/questions', async route => {
-            if (route.request().method() === 'POST') {
+        await page.route('**/api/items*', async route => {
+            const request = route.request()
+            console.log(`Intercepted ITEMS ${request.method()} ${request.url()}`)
+
+            if (request.method() === 'POST') {
+                const response = {
+                    id: 1,
+                    title: 'Test Question',
+                    collection_id: 1,
+                    difficulty: 3,
+                    images: [{ url: 'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg', public_id: 'sample_id' }]
+                }
+                console.log('Mock returning ITEMS:', JSON.stringify(response))
                 await route.fulfill({
                     status: 201,
                     contentType: 'application/json',
-                    body: JSON.stringify({ id: 1, title: 'Test Question' })
+                    body: JSON.stringify(response)
                 })
             } else {
                 await route.continue()
@@ -61,7 +92,6 @@ test.describe('Question Upload', () => {
         const testImagePath = path.join(__dirname, 'fixtures', 'test-image.jpg')
 
         // Wait for upload trigger button
-        // The ImageUploader component has a span with text "Upload"
         const uploadTrigger = page.locator('.n-upload-trigger')
         await uploadTrigger.waitFor()
 
@@ -71,34 +101,55 @@ test.describe('Question Upload', () => {
         const fileChooser = await fileChooserPromise
         await fileChooser.setFiles(testImagePath)
 
-        // Wait for upload to complete (check for thumbnail or removal of uploading state)
-        // Since mock is fast, we just wait a bit or check for the image card
-        await page.waitForTimeout(1000)
+        // Wait for upload to complete - verify image card appears
+        await page.waitForSelector('.n-upload-file-info', { timeout: 5000 })
+        console.log('TEST: Image upload confirmed')
 
         // Fill form
-        // Naive UI input renders an input element inside a div. 
-        // We can target the input directly by placeholder or type.
         await page.fill('input[placeholder="e.g., Year 2023 Question 15"]', 'Test Question E2E')
 
-        // Select subject
-        // Find the form item with label "Subject" and click its select trigger
-        await page.locator('.n-form-item', { hasText: 'Subject' }).locator('.n-select').click()
-        // Wait for dropdown to appear
-        await page.waitForSelector('.n-base-select-option__content >> text=Maths')
-        await page.click('.n-base-select-option__content >> text=Maths')
+        // Select subject (backed by collection)
+        const subjectSelect = page.locator('.n-form-item', { hasText: 'Subject' }).locator('.n-select')
+        await subjectSelect.click()
+        await page.waitForSelector('.n-base-select-option__content')
+        await page.click('.n-base-select-option__content:has-text("READING")')
+        await expect(subjectSelect).toHaveText(/READING/)
+        // Ensure value is set in the model
+        await page.waitForTimeout(500)
+        console.log('TEST: Subject selected')
 
-        // Select difficulty
-        await page.locator('.n-form-item', { hasText: 'Difficulty' }).locator('.n-select').click()
-        await page.waitForSelector('.n-base-select-option__content >> text=Medium')
-        await page.click('.n-base-select-option__content >> text=Medium')
+        // Select difficulty - use partial text match since label includes stars
+        const difficultySelect = page.locator('.n-form-item', { hasText: 'Difficulty' }).locator('.n-select')
+        await difficultySelect.click()
+        await page.waitForTimeout(300)
+        await page.click('.n-base-select-option__content:has-text("Medium")')
+        await expect(difficultySelect).toHaveText(/Medium/)
+        await page.waitForTimeout(500)
+        console.log('TEST: Difficulty selected')
+
+        //Debug: Check form values
+        const titleValue = await page.inputValue('input[placeholder="e.g., Year 2023 Question 15"]')
+        console.log('TEST: Title value:', titleValue)
 
         // Submit
         const submitBtn = page.locator('button:has-text("Upload Question")')
-        // Playwright automatically scrolls, so we don't need explicit scroll which might cause fighting
+        console.log('TEST: Clicking submit button...')
         await submitBtn.click()
 
-        // Should redirect to list
-        await expect(page).toHaveURL(/\/questions$/)
+        // Wait for navigation to complete
+        console.log('TEST: Waiting for navigation after submit...')
+        try {
+            await page.waitForURL(/\/questions$/, { timeout: 10000 })
+            console.log('TEST: Navigation successful')
+        } catch (e) {
+            console.log(`TEST: Navigation failed. Current URL: ${page.url()}`)
+            // Check if there are validation errors or other UI feedback
+            const errorText = await page.locator('.n-form-item-feedback__line').allInnerTexts().catch(() => [])
+            console.log('TEST: Validation errors:', errorText)
+            const toastMessage = await page.locator('.n-message__content').allInnerTexts().catch(() => [])
+            console.log('TEST: Toast messages:', toastMessage)
+            throw e
+        }
     })
 
     test.skip('should validate file size', async ({ page }) => {
@@ -118,7 +169,6 @@ test.describe('Question Upload', () => {
         const testImagePath = path.join(__dirname, 'fixtures', 'test-image.jpg')
 
         // Wait for upload trigger button
-        // The ImageUploader component has a span with text "Upload"
         const uploadTrigger = page.locator('.n-upload-trigger')
         await uploadTrigger.waitFor()
 

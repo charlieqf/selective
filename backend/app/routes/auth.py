@@ -1,9 +1,11 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from app.models.user import User
+from app.models.collection import Collection
 from app.schemas.auth import RegisterSchema, LoginSchema
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from datetime import timedelta
+from config import Config
 
 bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -39,6 +41,18 @@ def register():
         user.set_password(data['password'])
         
         db.session.add(user)
+        db.session.commit()
+        
+        # Create default collections
+        for subject_key, subject_info in Config.SUBJECTS.items():
+            collection = Collection(
+                user_id=user.id,
+                name=subject_info['name'],
+                type='SUBJECT',
+                icon=subject_info['icon'],
+                color=subject_info['color']
+            )
+            db.session.add(collection)
         db.session.commit()
         
         # 4. 生成Token

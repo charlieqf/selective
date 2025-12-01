@@ -14,7 +14,7 @@
     - id (INTEGER) Nullable: False
     - user_id (INTEGER) Nullable: False
     - content (TEXT) Nullable: True
-    - is_correct (TINYINT) Nullable: True
+    - is_correct (TINYINT) Nullable: False
     - duration_seconds (INTEGER) Nullable: True
     - created_at (DATETIME) Nullable: True
     - item_id (INTEGER) Nullable: False
@@ -57,6 +57,21 @@
     {'id': '3', 'user_id': '1', 'name': 'MATHS', 'icon': 'calculator', 'color': '#10b981', 'is_deleted': '0', 'deleted_at': 'None', 'created_at': '2025-11-29T02:06:02', 'updated_at': '2025-11-29T02:06:02', 'active_name': 'MATHS', 'type': 'SUBJECT'}
 
 
+=== TABLE: item_tags ===
+  Columns:
+    - item_id (INTEGER) Nullable: False
+    - tag_id (INTEGER) Nullable: False
+  Primary Key: ['item_id', 'tag_id']
+  Foreign Keys:
+    - fk_1: ['item_id'] -> items.['id']
+    - fk_2: ['tag_id'] -> tags.['id']
+  Indexes:
+    - fk_2: ['tag_id'] Unique: False
+    - idx_item_tags_tag_item: ['tag_id', 'item_id'] Unique: False
+  Sample Data (First 3 rows):
+    (No data)
+
+
 === TABLE: items ===
   Columns:
     - id (INTEGER) Nullable: False
@@ -97,6 +112,22 @@
     - fk_11: ['user_id'] -> users.['id']
   Indexes:
     - fk_10: ['user_id'] Unique: False
+  Sample Data (First 3 rows):
+    (No data)
+
+
+=== TABLE: tags ===
+  Columns:
+    - id (INTEGER) Nullable: False
+    - user_id (INTEGER) Nullable: False
+    - name (VARCHAR(50)) Nullable: False
+    - created_at (DATETIME) Nullable: True
+  Primary Key: ['id']
+  Foreign Keys:
+    - fk_1: ['user_id'] -> users.['id']
+  Indexes:
+    - fk_1: ['user_id'] Unique: False
+    - idx_tags_user_name_lower: ['user_id'] Unique: True
   Sample Data (First 3 rows):
     (No data)
 

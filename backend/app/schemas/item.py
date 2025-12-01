@@ -25,6 +25,8 @@ class ItemSchema(Schema):
     updated_at = fields.DateTime(dump_only=True)
     attempts = fields.Integer(dump_only=True)
     success_rate = fields.Float(dump_only=True)
+    # Tags accepted on input but handled by to_dict() for output
+    tags = fields.List(fields.String(), load_default=list, load_only=True)
 
     # We can keep subject validation if provided, but it's not required anymore
     @validates('subject')

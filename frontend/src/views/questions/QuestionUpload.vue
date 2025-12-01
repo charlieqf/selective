@@ -6,6 +6,7 @@ import { useItemStore } from '../../stores/items'
 import { useCollectionStore } from '../../stores/collections'
 import ImageUploader from '../../components/ImageUploader.vue'
 import uploadApi from '../../api/upload'
+import client from '../../api/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,8 +27,12 @@ const model = ref({
   title: '',
   collection_id: null,
   difficulty: 3,
-  content_text: ''
+  content_text: '',
+  tags: []
 })
+
+const tagOptions = ref([])
+const loadingTags = ref(false)
 
 const collectionOptions = computed(() => {
   return collectionStore.activeCollections.map(c => ({
@@ -46,8 +51,9 @@ const rules = {
 }
 
 onMounted(async () => {
-  // Fetch collections
+  // Fetch collections and tags
   await collectionStore.fetchCollections()
+  await fetchTags()
 
   if (route.params.id) {
     isEditMode.value = true
@@ -59,7 +65,8 @@ onMounted(async () => {
         title: item.title,
         collection_id: item.collection_id,
         difficulty: item.difficulty,
-        content_text: item.content_text
+        content_text: item.content_text,
+        tags: item.tags ? item.tags.map(t => t.name) : []
       }
       // Transform images for uploader
       uploadedImages.value = item.images || []
@@ -140,6 +147,18 @@ async function handleCancel() {
 
   router.push('/questions')
 }
+
+async function fetchTags() {
+  loadingTags.value = true
+  try {
+    const response = await client.get('/tags')
+    tagOptions.value = response.data.map(tag => tag.name)
+  } catch (error) {
+    console.error('Failed to fetch tags:', error)
+  } finally {
+    loadingTags.value = false
+  }
+}
 </script>
 
 <template>
@@ -182,6 +201,20 @@ async function handleCancel() {
               { label: '⭐⭐⭐⭐⭐ Very Hard', value: 5 }
             ]"
             placeholder="Select difficulty"
+          />
+        </n-form-item>
+
+        <!-- Tags -->
+        <n-form-item label="Tags (Optional)">
+          <n-select
+            v-model:value="model.tags"
+            :options="tagOptions"
+            filterable
+            tag
+            multiple
+            :loading="loadingTags"
+            placeholder="Add tags like 'fractions', 'patterns'..."
+            :max-tag-count="5"
           />
         </n-form-item>
 

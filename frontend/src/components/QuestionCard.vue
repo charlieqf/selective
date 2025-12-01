@@ -5,7 +5,7 @@ const props = defineProps({
   item: { type: Object, required: true }
 })
 
-const emit = defineEmits(['click'])
+const emit = defineEmits(['click', 'tag-click'])
 
 const firstImage = computed(() => {
   return props.item.images?.[0]?.url || null
@@ -33,6 +33,18 @@ const statusColors = {
       <span class="text-sm">{{ difficultyStars }}</span>
     </div>
     <h3 v-if="props.item.title" class="font-semibold mb-2" data-testid="card-title">{{ props.item.title }}</h3>
+    <!-- Tags -->
+    <div v-if="props.item.tags && props.item.tags.length > 0" class="flex flex-wrap gap-1 mb-2">
+      <span 
+        v-for="tag in props.item.tags" 
+        :key="tag.id || tag.name"
+        @click.stop="emit('tag-click', tag.name)"
+        class="text-xs px-2 py-0.5 bg-primary-50 text-primary-700 rounded-full cursor-pointer hover:bg-primary-100 transition-colors"
+        data-testid="card-tag"
+      >
+        #{{ tag.name }}
+      </span>
+    </div>
     <div class="flex items-center justify-between">
       <span :class="['text-xs px-2 py-1 rounded', statusColors[props.item.status]]">
         {{ props.item.status }}

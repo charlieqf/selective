@@ -2,8 +2,10 @@ from flask import Blueprint, request, jsonify
 from app import db
 from app.models.item import Item
 from app.models.collection import Collection
+from app.models.tag import Tag
 from app.schemas.item import ItemSchema
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import func
 import cloudinary.uploader
 
 bp = Blueprint('items', __name__, url_prefix='/api/items')
@@ -19,6 +21,7 @@ def get_items():
     collection_id = request.args.get('collection_id', type=int)
     difficulty = request.args.get('difficulty', type=int)
     status = request.args.get('status')
+    tags = request.args.getlist('tag')  # Multiple tag filters
     
     sort_by = request.args.get('sort_by', 'created_at')
     sort_direction = request.args.get('sort_direction', 'desc')
@@ -39,6 +42,10 @@ def get_items():
     if status:
         query = query.filter_by(status=status)
     
+    # Tag filtering (AND logic)
+    for tag_name in tags:
+        query = query.filter(Item.tags.any(func.lower(Tag.name) == tag_name.lower()))
+    
     # Sorting
     allowed_sort_fields = ['created_at', 'difficulty', 'updated_at']
     if sort_by not in allowed_sort_fields:
@@ -51,9 +58,9 @@ def get_items():
     
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     
-    schema = ItemSchema(many=True)
+    # Use to_dict() to ensure tags are included (ItemSchema has tags as load_only)
     return jsonify({
-        'items': schema.dump(pagination.items),
+        'items': [item.to_dict() for item in pagination.items],
         'total': pagination.total,
         'pages': pagination.pages,
         'current_page': page
@@ -91,6 +98,30 @@ def create_item():
         )
         item.set_images(data.get('images', []))
         
+        # Handle tags
+        tag_names = data.get('tags', [])
+        for tag_name in tag_names:
+            tag_name = tag_name.strip()
+            
+            # Validation
+            if not tag_name:
+                return jsonify({'error': 'Tag name cannot be empty'}), 400
+            if len(tag_name) > 30:
+                return jsonify({'error': 'Tag name cannot exceed 30 characters'}), 400
+            
+            # Find or create tag (case-insensitive)
+            tag = Tag.query.filter(
+                Tag.user_id == current_user_id,
+                func.lower(Tag.name) == tag_name.lower()
+            ).first()
+            
+            if not tag:
+                tag = Tag(user_id=current_user_id, name=tag_name)
+                db.session.add(tag)
+                db.session.flush()  # Get ID
+            
+            item.tags.append(tag)
+        
         # Promote pending uploads
         from app.models.pending_upload import PendingUpload
         for img in data.get('images', []):
@@ -100,7 +131,7 @@ def create_item():
         db.session.add(item)
         db.session.commit()
         
-        return jsonify(schema.dump(item)), 201
+        return jsonify(item.to_dict()), 201
         
     except Exception as e:
         db.session.rollback()
@@ -117,8 +148,7 @@ def get_item(id):
     if str(item.author_id) != str(current_user_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
-    schema = ItemSchema()
-    return jsonify(schema.dump(item)), 200
+    return jsonify(item.to_dict()), 200
 
 @bp.route('/<int:id>', methods=['PATCH'])
 @jwt_required()
@@ -165,9 +195,39 @@ def update_item(id):
             for img in data['images']:
                 if 'public_id' in img:
                     PendingUpload.query.filter_by(public_id=img['public_id']).delete()
+        
+        # Handle tags update
+        # NOTE: Tags are replaced entirely, not merged. Send full list to update.
+        if 'tags' in data:
+            # Clear existing tags
+            item.tags = []
+            
+            # Add new tags
+            tag_names = data.get('tags', [])
+            for tag_name in tag_names:
+                tag_name = tag_name.strip()
+                
+                # Validation
+                if not tag_name:
+                    return jsonify({'error': 'Tag name cannot be empty'}), 400
+                if len(tag_name) > 30:
+                    return jsonify({'error': 'Tag name cannot exceed 30 characters'}), 400
+                
+                # Find or create tag (case-insensitive)
+                tag = Tag.query.filter(
+                    Tag.user_id == current_user_id,
+                    func.lower(Tag.name) == tag_name.lower()
+                ).first()
+                
+                if not tag:
+                    tag = Tag(user_id=current_user_id, name=tag_name)
+                    db.session.add(tag)
+                    db.session.flush()  # Get ID
+                
+                item.tags.append(tag)
             
         db.session.commit()
-        return jsonify(schema.dump(item)), 200
+        return jsonify(item.to_dict()), 200
         
     except Exception as e:
         db.session.rollback()

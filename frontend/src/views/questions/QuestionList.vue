@@ -22,6 +22,26 @@
       @update:filters="handleFilterChange" 
     />
 
+    <!-- Active Tag Filters -->
+    <div v-if="activeTags.length > 0" class="flex flex-wrap gap-2 mb-4">
+      <span class="text-sm font-medium text-gray-700">Active Tags:</span>
+      <span 
+        v-for="(tag, index) in activeTags" 
+        :key="index"
+        class="inline-flex items-center gap-1 text-sm px-3 py-1 bg-primary-100 text-primary-800 rounded-full"
+      >
+        #{{ tag }}
+        <button @click="removeTag(tag)" class="hover:text-primary-900">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </span>
+      <button @click="clearTags" class="text-sm text-primary-600 hover:text-primary-800 underline">
+        Clear All
+      </button>
+    </div>
+
     <!-- Loading State -->
     <LoadingSpinner 
       v-if="itemStore.loading && !itemStore.items.length" 
@@ -52,6 +72,7 @@
           :key="item.id"
           :item="item"
           @click="handleItemClick"
+          @tag-click="handleTagClick"
         />
       </div>
       
@@ -69,8 +90,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useItemStore } from '../../stores/items'
 import { NButton, NSpace, NIcon, NPagination } from 'naive-ui'
 import { RefreshOutline as RefreshIcon } from '@vicons/ionicons5'
@@ -80,6 +101,7 @@ import LoadingSpinner from '../../components/LoadingSpinner.vue'
 import EmptyState from '../../components/EmptyState.vue'
 
 const router = useRouter()
+const route = useRoute()
 const itemStore = useItemStore()
 
 const filters = ref({
@@ -91,29 +113,48 @@ const filters = ref({
   sort_direction: 'desc'
 })
 
+const activeTags = ref([])
+
+// Initialize from URL query
 onMounted(() => {
-  // Initial fetch
+  const tagParam = route.query.tag
+  if (tagParam) {
+    activeTags.value = Array.isArray(tagParam) ? tagParam : [tagParam]
+  }
+  handleRefresh()
+})
+
+// Watch for route query changes
+watch(() => route.query.tag, (newTag) => {
+  if (newTag) {
+    activeTags.value = Array.isArray(newTag) ? newTag : [newTag]
+  } else {
+    activeTags.value = []
+  }
   handleRefresh()
 })
 
 const handleRefresh = () => {
   itemStore.fetchItems({
     page: 1,
-    ...filters.value
+    ...filters.value,
+    tag: activeTags.value.length > 0 ? activeTags.value : undefined
   })
 }
 
 const handleFilterChange = () => {
   itemStore.fetchItems({
     page: 1,
-    ...filters.value
+    ...filters.value,
+    tag: activeTags.value.length > 0 ? activeTags.value : undefined
   })
 }
 
 const changePage = (page) => {
   itemStore.fetchItems({
     page,
-    ...filters.value
+    ...filters.value,
+    tag: activeTags.value.length > 0 ? activeTags.value : undefined
   })
   // Scroll to top
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -121,5 +162,37 @@ const changePage = (page) => {
 
 const handleItemClick = (item) => {
   router.push(`/questions/${item.id}`)
+}
+
+const handleTagClick = (tagName) => {
+  if (!activeTags.value.includes(tagName)) {
+    activeTags.value.push(tagName)
+    updateRouteQuery()
+    handleRefresh()
+  }
+}
+
+const removeTag = (tagName) => {
+  activeTags.value = activeTags.value.filter(t => t !== tagName)
+  updateRouteQuery()
+  handleRefresh()
+}
+
+const clearTags = () => {
+  activeTags.value = []
+  updateRouteQuery()
+  handleRefresh()
+}
+
+const updateRouteQuery = () => {
+  const query = { ...route.query }
+  
+  if (activeTags.value.length > 0) {
+    query.tag = activeTags.value
+  } else {
+    delete query.tag
+  }
+  
+  router.replace({ query })
 }
 </script>

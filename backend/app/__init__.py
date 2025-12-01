@@ -46,13 +46,14 @@ def create_app(config_name=None):
     })
     
     # 注册蓝图
-    from app.routes import auth, items, collections, upload, analytics, answer
+    from app.routes import auth, items, collections, upload, analytics, answer, tags
     app.register_blueprint(auth.bp)
     app.register_blueprint(items.bp)
     app.register_blueprint(collections.bp)
     app.register_blueprint(upload.bp)
     app.register_blueprint(analytics.bp)
     app.register_blueprint(answer.bp)
+    app.register_blueprint(tags.bp)
     
     # 健康检查路由
     @app.route('/health')

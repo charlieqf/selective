@@ -37,6 +37,9 @@ class Item(db.Model):
         db.CheckConstraint("status IN ('UNANSWERED', 'ANSWERED', 'MASTERED', 'NEED_REVIEW')", name='check_status_valid'),
     )
     
+    # Relationships
+    tags = db.relationship('Tag', secondary='item_tags', backref=db.backref('items', lazy='dynamic'))
+    
     def set_images(self, images_list):
         self.images = images_list
         
@@ -55,5 +58,14 @@ class Item(db.Model):
             'content_text': self.content_text,
             'author_id': self.author_id,
             'created_at': self.created_at.isoformat(),
-            'attempts': self.attempts
+            'attempts': self.attempts,
+            'tags': [tag.to_dict() for tag in self.tags]
         }
+
+# Association Table
+item_tags = db.Table('item_tags',
+    db.Column('item_id', db.Integer, db.ForeignKey('items.id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'), primary_key=True),
+    db.Index('idx_item_tags_tag_item', 'tag_id', 'item_id')
+)
+

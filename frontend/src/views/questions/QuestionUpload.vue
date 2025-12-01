@@ -7,6 +7,7 @@ import { useCollectionStore } from '../../stores/collections'
 import ImageUploader from '../../components/ImageUploader.vue'
 import uploadApi from '../../api/upload'
 import client from '../../api/client'
+import tagsApi from '../../api/tags'
 
 const route = useRoute()
 const router = useRouter()
@@ -151,8 +152,11 @@ async function handleCancel() {
 async function fetchTags() {
   loadingTags.value = true
   try {
-    const response = await client.get('/tags')
-    tagOptions.value = response.data.map(tag => tag.name)
+    const response = await tagsApi.getTags()
+    tagOptions.value = response.data.map(tag => ({
+      label: tag.name,
+      value: tag.name
+    }))
   } catch (error) {
     console.error('Failed to fetch tags:', error)
   } finally {

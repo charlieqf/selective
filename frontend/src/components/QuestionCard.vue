@@ -34,7 +34,7 @@ const statusColors = {
     </div>
     <h3 v-if="props.item.title" class="font-semibold mb-2" data-testid="card-title">{{ props.item.title }}</h3>
     <!-- Tags -->
-    <div v-if="props.item.tags && props.item.tags.length > 0" class="flex flex-wrap gap-1 mb-2">
+    <div v-if="props.item.tags && props.item.tags.length > 0" class="flex flex-wrap gap-2 mb-2">
       <span 
         v-for="tag in props.item.tags" 
         :key="tag.id || tag.name"

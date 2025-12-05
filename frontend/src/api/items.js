@@ -17,6 +17,10 @@ export default {
         return client.patch(`/items/${id}`, data)
     },
 
+    rotateImage(id, imageIndex, rotation) {
+        return client.patch(`/items/${id}/rotate`, { image_index: imageIndex, rotation })
+    },
+
     deleteItem(id) {
         return client.delete(`/items/${id}`)
     },

@@ -102,15 +102,22 @@ class TestPendingUploadSecurity:
             db.session.add(recent_upload)
             db.session.commit()
             
-            # Run cleanup
-            deleted_count = PendingUpload.cleanup_expired(hours=24)
-            
-            # Should delete 1
-            assert deleted_count == 1
-            
-            # Old should be gone, recent should remain
-            assert PendingUpload.query.filter_by(public_id='selective-questions/old.jpg').first() is None
-            assert PendingUpload.query.filter_by(public_id='selective-questions/recent.jpg').first() is not None
+            # Mock Cloudinary
+            with patch('cloudinary.uploader.destroy') as mock_destroy:
+                mock_destroy.return_value = {'result': 'ok'}
+                
+                # Run cleanup
+                deleted_count = PendingUpload.cleanup_expired(hours=24)
+                
+                # Should delete 1
+                assert deleted_count == 1
+                
+                # Verify Cloudinary was called for the old image
+                mock_destroy.assert_called_once_with('selective-questions/old.jpg')
+                
+                # Old should be gone, recent should remain
+                assert PendingUpload.query.filter_by(public_id='selective-questions/old.jpg').first() is None
+                assert PendingUpload.query.filter_by(public_id='selective-questions/recent.jpg').first() is not None
 
 
 class TestRegistrationRoles:

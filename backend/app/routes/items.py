@@ -1,14 +1,21 @@
 from flask import Blueprint, request, jsonify
 from app import db
+from datetime import datetime
 from app.models.item import Item
 from app.models.collection import Collection
 from app.models.tag import Tag
 from app.schemas.item import ItemSchema
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import func
+from marshmallow import ValidationError
 import cloudinary.uploader
+from sqlalchemy.orm.attributes import flag_modified
 
 bp = Blueprint('items', __name__, url_prefix='/api/items')
+
+# Module-level schema instances (singletons for performance)
+item_schema = ItemSchema()
+item_schema_partial = ItemSchema(partial=True)
 
 @bp.route('', methods=['GET'])
 @jwt_required()
@@ -72,10 +79,10 @@ def create_item():
     data = request.get_json()
     current_user_id = get_jwt_identity()
     
-    schema = ItemSchema()
-    errors = schema.validate(data)
-    if errors:
-        return jsonify({'error': 'Validation failed', 'details': errors}), 400
+    try:
+        data = item_schema.load(data)
+    except ValidationError as e:
+        return jsonify({'error': 'Validation failed', 'details': e.messages}), 400
         
     # Security: Validate collection ownership
     collection_id = data.get('collection_id')
@@ -161,10 +168,10 @@ def update_item(id):
         return jsonify({'error': 'Unauthorized'}), 403
         
     data = request.get_json()
-    schema = ItemSchema(partial=True)
-    errors = schema.validate(data)
-    if errors:
-        return jsonify({'error': 'Validation failed', 'details': errors}), 400
+    try:
+        data = item_schema_partial.load(data)
+    except ValidationError as e:
+        return jsonify({'error': 'Validation failed', 'details': e.messages}), 400
         
     try:
         if 'title' in data:
@@ -233,6 +240,51 @@ def update_item(id):
         db.session.rollback()
         print(f"Update item error: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
+
+@bp.route('/<int:id>/rotate', methods=['PATCH'])
+@jwt_required()
+def rotate_image(id):
+    """Update rotation for a specific image"""
+    item = Item.query.get_or_404(id)
+    current_user_id = get_jwt_identity()
+    
+    # Security: Author only
+    if str(item.author_id) != str(current_user_id):
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    image_index = data.get('image_index', 0)
+    rotation = data.get('rotation', 0)
+    
+    # Validate
+    if rotation not in [0, 90, 180, 270]:
+        return jsonify({'error': 'Invalid rotation'}), 400
+    
+    # Update JSON
+    if not item.images or image_index >= len(item.images):
+        return jsonify({'error': 'Invalid image index'}), 400
+        
+    # Copy list to trigger SQLAlchemy change detection
+    images = list(item.images)
+    
+    # Ensure image object is dict
+    if not isinstance(images[image_index], dict):
+        images[image_index] = {'url': images[image_index]}
+    
+    images[image_index]['rotation'] = rotation
+    item.images = images
+    flag_modified(item, 'images')
+    
+    # Explicitly update timestamp to ensure cache busting mechanism works
+    item.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    return jsonify({
+        'rotation': rotation,
+        'image_index': image_index,
+        'updated_at': item.updated_at.isoformat()
+    })
 
 @bp.route('/<int:id>', methods=['DELETE'])
 @jwt_required()

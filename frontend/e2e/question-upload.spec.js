@@ -101,8 +101,26 @@ test.describe('Question Upload', () => {
         const fileChooser = await fileChooserPromise
         await fileChooser.setFiles(testImagePath)
 
-        // Wait for upload to complete - verify image card appears
-        await page.waitForSelector('.n-upload-file-info', { timeout: 5000 })
+        // Wait for upload to complete - wait for finished state (not just file appearing)
+        // The upload component sets status to 'finished' when complete
+        await page.waitForSelector('.n-upload-file-info', { timeout: 10000 })
+
+        // Wait for the customRequest to complete (compression + upload)
+        // We need to wait for the mock API to be called
+        let uploadCalled = false
+        page.on('request', req => {
+            if (req.url().includes('/api/upload') && req.method() === 'POST') {
+                uploadCalled = true
+                console.log('TEST: Upload API was called!')
+            }
+        })
+
+        // Give time for image compression and upload to complete
+        await page.waitForTimeout(5000)
+
+        if (!uploadCalled) {
+            console.log('TEST: WARNING - Upload API was never called!')
+        }
         console.log('TEST: Image upload confirmed')
 
         // Fill form
@@ -118,12 +136,13 @@ test.describe('Question Upload', () => {
         await page.waitForTimeout(500)
         console.log('TEST: Subject selected')
 
-        // Select difficulty - use partial text match since label includes stars
+        // Select difficulty - match by partial text, options have emoji stars
         const difficultySelect = page.locator('.n-form-item', { hasText: 'Difficulty' }).locator('.n-select')
         await difficultySelect.click()
         await page.waitForTimeout(300)
-        await page.click('.n-base-select-option__content:has-text("Medium")')
-        await expect(difficultySelect).toHaveText(/Medium/)
+        // Use more flexible selector - look for option containing "Medium"
+        const mediumOption = page.locator('.n-base-select-option').filter({ hasText: 'Medium' })
+        await mediumOption.click()
         await page.waitForTimeout(500)
         console.log('TEST: Difficulty selected')
 

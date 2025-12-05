@@ -181,6 +181,9 @@ async function fetchTags() {
             :enable-upload="true"
             :max-images="5"
           />
+          <p class="text-xs text-gray-500 mt-1">
+            Tip: On mobile devices, you can take photos directly.
+          </p>
         </n-form-item>
 
         <!-- 标题 -->

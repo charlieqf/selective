@@ -5,6 +5,7 @@ from config import Config
 class ImageSchema(Schema):
     url = fields.String(required=True)
     public_id = fields.String(required=True)
+    rotation = fields.Integer(load_default=0, validate=validate.OneOf([0, 90, 180, 270]))
 
 class ItemSchema(Schema):
     id = fields.Integer(dump_only=True)

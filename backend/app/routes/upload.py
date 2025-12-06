@@ -9,6 +9,7 @@ from app.models.item import Item
 bp = Blueprint('upload', __name__, url_prefix='/api/upload')
 
 # Trigger redeploy for 15MB limit fix
+print("--- UPLOAD BLUEPRINT LOADED (15MB Fix v2) ---", flush=True)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 
@@ -34,7 +35,7 @@ def upload_image():
             size = file.tell()
             file.seek(0)
             
-            print(f"File upload: {file.filename}, Size: {size} bytes")
+            print(f"File upload: {file.filename}, Size: {size} bytes", flush=True)
             
             if size > 15 * 1024 * 1024: # 15MB
                 return jsonify({'error': f'File too large (max 15MB), got {size/1024/1024:.2f}MB'}), 400

@@ -8,6 +8,8 @@ from app.models.item import Item
 
 bp = Blueprint('upload', __name__, url_prefix='/api/upload')
 
+# Trigger redeploy for 15MB limit fix
+
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 
 def allowed_file(filename):

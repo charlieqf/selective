@@ -92,6 +92,12 @@ class ProductionConfig(Config):
     """生产环境配置"""
     DEBUG = False
     TESTING = False
+    # TiDB Serverless requires shorter connection life
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': 10,
+        'pool_recycle': 280,
+        'pool_pre_ping': True
+    }
 
 
 class TestingConfig(Config):

@@ -13,9 +13,7 @@ Ensure your production environment (Railway/Render) has the following variables 
 | `DATABASE_URL` | Yes | TiDB Cloud Connection String (Must include `?ssl_mode=VERIFIED`) | `mysql+pymysql://user:pass@gateway01.us-west-2.prod.aws.tidbcloud.com:4000/db?ssl_mode=VERIFIED` |
 | `SECRET_KEY` | Yes | Flask Session Encryption Key (Random generated) | `openssl rand -hex 32` |
 | `JWT_SECRET_KEY` | Yes | JWT Signing Key (Random generated) | `openssl rand -hex 32` |
-| `CLOUDINARY_CLOUD_NAME` | Yes | Cloudinary Cloud Name | `my-app` |
-| `CLOUDINARY_API_KEY` | Yes | Cloudinary API Key | `1234567890` |
-| `CLOUDINARY_API_SECRET` | Yes | Cloudinary API Secret | `xyz...` |
+| `CLOUDINARY_URL` | Yes | Cloudinary Connection URL | `cloudinary://12345:abcde@my-app` |
 | `CORS_ORIGINS` | Yes | Allowed Frontend Domains (Comma separated) | `https://your-frontend.vercel.app` |
 | `FLASK_DEBUG` | No | Must be disabled in production | `0` or `False` |
 
@@ -26,6 +24,7 @@ When deploying the frontend on Vercel, configure only one variable:
 | Variable Name | Description |
 | :--- | :--- |
 | `VITE_API_URL` | Backend API URL (e.g., `https://your-backend.railway.app`) |
+| `VITE_CLOUDINARY_CLOUD_NAME` | Cloudinary Cloud Name (e.g., `dsrb7j7rm`) |
 
 ## 2. Database & Schema Management
 

@@ -55,12 +55,13 @@ openssl rand -hex 32  # Use for JWT_SECRET_KEY
 
 1.  **Create Project**: Dashboard -> New Project -> Deploy from My Repo -> `selective`.
 2.  **Configure Root Directory**:
-    *   Click the project card -> Settings -> General -> Root Directory.
+    *   Click the project card -> Settings -> **Source**.
+    *   Click **"Add Root Directory"**.
     *   Enter: `backend` -> Save.
 3.  **Add Environment Variables**:
     *   Click "Variables".
     *   Add `DATABASE_URL` (from Phase 2.1).
-    *   Add `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (from Phase 2.2).
+    *   Add `CLOUDINARY_URL` (Format: `cloudinary://<api_key>:<api_secret>@<cloud_name>`).
     *   Add `SECRET_KEY`, `JWT_SECRET_KEY` (from Phase 2.3).
     *   **Add `CORS_ORIGINS`**: Set to `http://localhost:5173` (Safe placeholder).
         *   **CRITICAL**: Do NOT use `*` in production, even temporarily.
@@ -84,6 +85,8 @@ openssl rand -hex 32  # Use for JWT_SECRET_KEY
 3.  **Add Environment Variables**:
     *   Name: `VITE_API_URL`
     *   Value: Paste the **Railway URL** from Phase 3 (e.g., `https://selective-prod.up.railway.app`).
+    *   Name: `VITE_CLOUDINARY_CLOUD_NAME`
+    *   Value: Your Cloudinary Cloud Name (e.g., `dsrb7j7rm`).
 4.  **Deploy**:
     *   Click "Deploy".
     *   Wait for the "Congratulations!" screen.

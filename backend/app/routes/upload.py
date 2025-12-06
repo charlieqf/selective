@@ -32,8 +32,10 @@ def upload_image():
             size = file.tell()
             file.seek(0)
             
-            if size > 5 * 1024 * 1024: # 5MB
-                return jsonify({'error': 'File too large (max 5MB)'}), 400
+            print(f"File upload: {file.filename}, Size: {size} bytes")
+            
+            if size > 15 * 1024 * 1024: # 15MB
+                return jsonify({'error': f'File too large (max 15MB), got {size/1024/1024:.2f}MB'}), 400
             
             current_user_id = get_jwt_identity()
             

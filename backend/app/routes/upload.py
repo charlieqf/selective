@@ -13,9 +13,30 @@ print("--- UPLOAD BLUEPRINT LOADED (15MB Fix v2) ---", flush=True)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 
+import inspect
+import os
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@bp.route('/debug-info', methods=['GET'])
+def debug_info():
+    """Debug endpoint to verify runtime code"""
+    import sys
+    try:
+        source = inspect.getsource(upload_image)
+    except:
+        source = "Could not get source"
+        
+    return jsonify({
+        "status": "active",
+        "file": __file__,
+        "cwd": os.getcwd(),
+        "source_snippet": source[:500],
+        "size_limit_check": "15MB" if "15 *" in source else "Unknown",
+        "blueprint_prefix": bp.url_prefix
+    })
 
 @bp.route('', methods=['POST'])
 @jwt_required()

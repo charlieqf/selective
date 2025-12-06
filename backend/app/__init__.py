@@ -59,6 +59,11 @@ def create_app(config_name=None):
     @app.route('/health')
     def health():
         return {'status': 'ok', 'message': 'Server is running'}, 200
+        
+    @app.before_request
+    def log_request_info():
+        from flask import request
+        print(f"Global Request Log: {request.method} {request.path} | Length: {request.content_length}", flush=True)
     
     @app.route('/')
     def index():

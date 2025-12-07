@@ -86,17 +86,23 @@ def create_item():
         
     # Security: Validate collection ownership
     collection_id = data.get('collection_id')
+    collection = None
     if collection_id:
         collection = Collection.query.get(collection_id)
         if not collection:
             return jsonify({'error': 'Invalid collection_id: Collection not found'}), 404
         if str(collection.user_id) != str(current_user_id):
             return jsonify({'error': 'Invalid collection_id: Access denied'}), 403
+
+    # Derive subject from collection if not provided (keeps analytics compatible during migration)
+    subject_value = data.get('subject')
+    if not subject_value and collection and collection.type == 'SUBJECT':
+        subject_value = collection.name
         
     try:
         item = Item(
             title=data.get('title'),
-            subject=data.get('subject'), # Legacy
+            subject=subject_value, # Legacy subject kept in sync for analytics/filters
             collection_id=collection_id, # New
             difficulty=data.get('difficulty', 3),
             status=data.get('status', 'UNANSWERED'),
@@ -174,10 +180,14 @@ def update_item(id):
         return jsonify({'error': 'Validation failed', 'details': e.messages}), 400
         
     try:
+        # Track subject to allow derivation when only collection changes
+        subject_value = item.subject
+        collection = None
+
         if 'title' in data:
             item.title = data['title']
         if 'subject' in data:
-            item.subject = data['subject']
+            subject_value = data['subject']
         if 'collection_id' in data:
             collection_id = data['collection_id']
             # Security: Validate collection ownership if changing collection
@@ -188,6 +198,9 @@ def update_item(id):
                 if str(collection.user_id) != str(current_user_id):
                     return jsonify({'error': 'Invalid collection_id: Access denied'}), 403
             item.collection_id = collection_id
+            # If subject not explicitly provided, derive from subject-type collection
+            if 'subject' not in data and collection and collection.type == 'SUBJECT':
+                subject_value = collection.name
             
         if 'difficulty' in data:
             item.difficulty = data['difficulty']
@@ -232,6 +245,10 @@ def update_item(id):
                     db.session.flush()  # Get ID
                 
                 item.tags.append(tag)
+
+        # Apply subject updates after derivation logic
+        if subject_value != item.subject:
+            item.subject = subject_value
             
         db.session.commit()
         return jsonify(item.to_dict()), 200

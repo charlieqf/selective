@@ -183,3 +183,27 @@ def test_get_items_filter_collection(client, auth_headers):
     assert 'Q2' not in titles
 
 
+def test_create_item_derives_subject_from_collection(client, auth_headers):
+    from app.models.collection import Collection
+    from app import db
+
+    # Create a subject-type collection for the user
+    c = Collection(user_id=1, name="READING", type="SUBJECT")
+    db.session.add(c)
+    db.session.commit()
+
+    # Create item without explicit subject, only collection_id
+    resp = client.post('/api/items', json={'collection_id': c.id, 'title': 'With Collection'}, headers=auth_headers)
+    assert resp.status_code == 201
+    assert resp.json['collection_id'] == c.id
+    # Subject should be derived from collection name for compatibility
+    assert resp.json['subject'] == "READING"
+
+    # Ensure persistence
+    item_id = resp.json['id']
+    item_resp = client.get(f'/api/items/{item_id}', headers=auth_headers)
+    assert item_resp.status_code == 200
+    assert item_resp.json['subject'] == "READING"
+    assert item_resp.json['updated_at'] is not None
+
+

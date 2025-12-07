@@ -58,6 +58,7 @@ class Item(db.Model):
             'content_text': self.content_text,
             'author_id': self.author_id,
             'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'attempts': self.attempts,
             'tags': [tag.to_dict() for tag in self.tags]
         }

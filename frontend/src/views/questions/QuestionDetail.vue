@@ -204,6 +204,7 @@ async function rotateImage(index, angle) {
           v-if="item.images && item.images.length > 0"
           show-arrow
           draggable
+          arrow-style="{ color: '#111827', backgroundColor: '#e5e7eb' }"
           class="bg-gray-50 rounded-lg"
         >
           <div
@@ -216,6 +217,9 @@ async function rotateImage(index, angle) {
               class="w-full h-auto object-contain max-h-96 transition-transform duration-300"
               :alt="`Question image ${index + 1}`"
             />
+            <div class="mt-2 text-sm text-gray-600" data-testid="image-counter">
+              Image {{ index + 1 }} of {{ item.images.length }}
+            </div>
             
             <!-- Rotation Controls -->
             <div v-if="canEdit" class="mt-4 flex gap-2">

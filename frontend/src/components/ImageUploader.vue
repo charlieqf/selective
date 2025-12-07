@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref, watch, computed } from 'vue'
 import { NUpload, NButton, NIcon, useMessage, NModal, NSpace, NCard } from 'naive-ui'
 import { Add, Camera, Image as ImageIcon, Refresh, ArrowUndo, ArrowRedo } from '@vicons/ionicons5'
@@ -106,12 +106,22 @@ async function customRequest({ file, onProgress, onFinish, onError }) {
     const { data } = await uploadApi.uploadImage(compressedFile)
     
     // 使用WeakMap保存File对象→上传数据的映射
+        // Track uploaded data
     fileToUploadedMap.set(file.file, {
       url: data.url,
       public_id: data.public_id
     })
+    // Sync Naive UI entry so new uploads append instead of overwrite
+    const idx = fileList.value.findIndex(f => f.id === file.id)
+    if (idx !== -1) {
+      fileList.value[idx] = {
+        ...fileList.value[idx],
+        status: 'finished',
+        url: data.url
+      }
+    }
     
-    // 更新modelValue
+    // Emit updated modelValue
     updateModelValue()
     
     onFinish()
@@ -369,3 +379,4 @@ async function applyRotation(file, degrees) {
     </p>
   </div>
 </template>
+

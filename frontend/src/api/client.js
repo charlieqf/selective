@@ -3,9 +3,6 @@ import { useAuthStore } from '../stores/auth'
 
 const client = axios.create({
     baseURL: import.meta.env.VITE_API_URL || '/api',
-    headers: {
-        'Content-Type': 'application/json'
-    },
     paramsSerializer: {
         serialize: (params) => {
             const searchParams = new URLSearchParams();

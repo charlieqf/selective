@@ -183,6 +183,10 @@ function updateModelValue() {
         // Preserve all original fields (like rotation) + url/public_id
         return { ...data, url: data.url, public_id: data.public_id }
       }
+      // Fallback: keep entries that already have a URL (e.g., preloaded images during edit)
+      if (item.url) {
+        return { url: item.url, public_id: item.public_id }
+      }
       return null
     })
     .filter(Boolean)

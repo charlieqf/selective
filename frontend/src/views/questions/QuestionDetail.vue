@@ -204,7 +204,7 @@ async function rotateImage(index, angle) {
           v-if="item.images && item.images.length > 0"
           show-arrow
           draggable
-          arrow-style="{ color: '#111827', backgroundColor: '#e5e7eb' }"
+          :arrow-style="{ color: '#0f172a', backgroundColor: '#e5e7eb', boxShadow: '0 0 0 1px #cbd5e1' }"
           class="bg-gray-50 rounded-lg"
         >
           <div

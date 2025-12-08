@@ -204,7 +204,7 @@ async function rotateImage(index, angle) {
           v-if="item.images && item.images.length > 0"
           show-arrow
           draggable
-          :arrow-style="{ color: '#0f172a', backgroundColor: '#e5e7eb', boxShadow: '0 0 0 1px #cbd5e1' }"
+          :arrow-style="{ color: '#0f172a', backgroundColor: '#e2e8f0', boxShadow: '0 0 0 1px #94a3b8', opacity: 1 }"
           class="bg-gray-50 rounded-lg"
         >
           <div
@@ -287,6 +287,16 @@ async function rotateImage(index, angle) {
     </template>
   </div>
 </template>
+
+<style scoped>
+/* Make carousel arrows high-contrast and always visible */
+.n-carousel .n-carousel__arrow {
+  opacity: 1;
+  background-color: #e2e8f0;
+  color: #0f172a;
+  box-shadow: 0 0 0 1px #94a3b8;
+}
+</style>
 
 <style scoped>
 .container {

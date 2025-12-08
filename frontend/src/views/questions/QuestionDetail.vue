@@ -205,6 +205,7 @@ async function rotateImage(index, angle) {
           show-arrow
           draggable
           :arrow-style="{ color: '#0f172a', backgroundColor: '#e2e8f0', boxShadow: '0 0 0 1px #94a3b8', opacity: 1 }"
+          arrow-placement="outer"
           class="bg-gray-50 rounded-lg"
         >
           <div
@@ -289,13 +290,24 @@ async function rotateImage(index, angle) {
 </template>
 
 <style scoped>
-/* Make carousel arrows high-contrast and always visible */
-.n-carousel .n-carousel__arrow {
-  opacity: 1;
-  background-color: #e2e8f0;
-  color: #0f172a;
-  box-shadow: 0 0 0 1px #94a3b8;
-}
+  /* Make carousel arrows high-contrast and always visible */
+  :deep(.n-carousel__arrow) {
+    opacity: 1;
+    background-color: #e2e8f0;
+    color: #0f172a;
+    box-shadow: 0 0 0 1px #94a3b8;
+  }
+  /* Increase arrow icon size */
+  :deep(.n-carousel__arrow .n-icon) {
+    font-size: 20px;
+  }
+  /* Ensure outer placement arrows sit away from content */
+  :deep(.n-carousel__arrow--left) {
+    left: -36px;
+  }
+  :deep(.n-carousel__arrow--right) {
+    right: -36px;
+  }
 </style>
 
 <style scoped>

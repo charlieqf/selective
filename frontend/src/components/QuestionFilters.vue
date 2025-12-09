@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue'
-import { NSelect, NSpace } from 'naive-ui'
+import { NSelect, NSpace, NCheckbox } from 'naive-ui'
 import { useCollectionStore } from '@/stores/collections'
 
 const props = defineProps({
@@ -34,13 +34,17 @@ const difficultyOptions = [
 const statusOptions = [
   { label: 'Unanswered', value: 'UNANSWERED' },
   { label: 'Answered', value: 'ANSWERED' },
-  { label: 'Mastered', value: 'MASTERED' },
-  { label: 'Need Review', value: 'NEED_REVIEW' }
+  { label: 'Mastered', value: 'MASTERED' }
 ]
+
+function toggleNeedsReview(checked) {
+  filters.value.needs_review = checked ? 'true' : undefined
+  emit('update:filters', filters.value)
+}
 </script>
 
 <template>
-  <div class="flex gap-4 mb-4">
+  <div class="flex gap-4 mb-4 items-center">
     <!-- Subject Filter (uses collections) -->
     <n-select
       v-model:value="filters.collection_id"
@@ -70,5 +74,15 @@ const statusOptions = [
       data-testid="status-filter"
       @update:value="$emit('update:filters', filters)"
     />
+    
+    <!-- Needs Review Filter -->
+    <n-checkbox
+      :checked="filters.needs_review === 'true'"
+      @update:checked="toggleNeedsReview"
+      data-testid="needs-review-filter"
+    >
+      Needs Review
+    </n-checkbox>
   </div>
 </template>
+

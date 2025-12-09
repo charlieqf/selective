@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useAnalyticsStore } from '../../stores/analytics'
+import { useCollectionStore } from '../../stores/collections'
 import QuestionCard from '../../components/QuestionCard.vue'
 import LoadingSpinner from '../../components/LoadingSpinner.vue'
 import EmptyState from '../../components/EmptyState.vue'
@@ -11,13 +12,24 @@ import { NGrid, NGridItem, NCard, NStatistic, NButton, NSpace } from 'naive-ui'
 const router = useRouter()
 const authStore = useAuthStore()
 const analyticsStore = useAnalyticsStore()
+const collectionStore = useCollectionStore()
 
 onMounted(async () => {
-  await analyticsStore.refreshAll()
+  await Promise.all([
+    analyticsStore.refreshAll(),
+    collectionStore.fetchCollections()
+  ])
 })
 
 function handleItemClick(item) {
   router.push(`/questions/${item.id}`)
+}
+
+function goToReview(collectionId) {
+  router.push({
+    path: '/questions',
+    query: { collection_id: collectionId, needs_review: 'true' }
+  })
 }
 </script>
 
@@ -83,17 +95,26 @@ function handleItemClick(item) {
         />
       </div>
 
-      <!-- 各科目统计 -->
+      <!-- Collections -->
       <div>
-        <h2 class="text-2xl font-bold mb-4">Subject Breakdown</h2>
+        <h2 class="text-2xl font-bold mb-4">Collections</h2>
         <n-grid :cols="4" :x-gap="16" :y-gap="16" responsive="screen">
-          <n-grid-item v-for="(stats, subject) in analyticsStore.stats?.by_subject" :key="subject" :span="4" :md-span="2" :lg-span="1">
-            <n-card :title="subject">
+          <n-grid-item v-for="collection in collectionStore.activeCollections" :key="collection.id" :span="4" :md-span="2" :lg-span="1">
+            <n-card :title="collection.name">
               <n-space vertical>
-                <div>Total: {{ stats.total }}</div>
-                <div>Answered: {{ stats.answered }}</div>
-                <div>Mastered: {{ stats.mastered }}</div>
+                <div>Total: {{ collection.total_count || 0 }}</div>
+                <div>Need Review: {{ collection.need_review_count || 0 }}</div>
               </n-space>
+              <template #action>
+                <n-button 
+                  v-if="collection.need_review_count > 0"
+                  size="small" 
+                  type="warning"
+                  @click="goToReview(collection.id)"
+                >
+                  Review ({{ collection.need_review_count }})
+                </n-button>
+              </template>
             </n-card>
           </n-grid-item>
         </n-grid>

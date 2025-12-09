@@ -16,7 +16,8 @@ class Item(db.Model):
     collection_id = db.Column(db.Integer, db.ForeignKey('collections.id'), nullable=True)
     
     difficulty = db.Column(db.Integer, default=3)  # 1-5, default 3
-    status = db.Column(db.String(20), default='UNANSWERED')  # UNANSWERED, ANSWERED, MASTERED, NEED_REVIEW
+    status = db.Column(db.String(20), default='UNANSWERED')  # UNANSWERED, ANSWERED, MASTERED
+    needs_review = db.Column(db.Boolean, default=False, nullable=False)  # Independent review flag
     
     # Content Fields (JSON storage)
     images = db.Column(db.JSON)  
@@ -34,7 +35,7 @@ class Item(db.Model):
     # Constraints
     __table_args__ = (
         db.CheckConstraint('difficulty >= 1 AND difficulty <= 5', name='check_difficulty_range'),
-        db.CheckConstraint("status IN ('UNANSWERED', 'ANSWERED', 'MASTERED', 'NEED_REVIEW')", name='check_status_valid'),
+        db.CheckConstraint("status IN ('UNANSWERED', 'ANSWERED', 'MASTERED')", name='check_status_valid'),
     )
     
     # Relationships
@@ -60,7 +61,8 @@ class Item(db.Model):
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'attempts': self.attempts,
-            'tags': [tag.to_dict() for tag in self.tags]
+            'tags': [tag.to_dict() for tag in self.tags],
+            'needs_review': self.needs_review
         }
 
 # Association Table

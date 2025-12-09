@@ -4,6 +4,7 @@ from app import db
 from app.models.collection import Collection
 from app.models.item import Item
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func, case
 from datetime import datetime
 
 bp = Blueprint('collections', __name__, url_prefix='/api/collections')
@@ -12,13 +13,36 @@ bp = Blueprint('collections', __name__, url_prefix='/api/collections')
 @jwt_required()
 def get_collections():
     current_user_id = get_jwt_identity()
-    # List active collections
-    collections = Collection.query.filter_by(
-        user_id=current_user_id, 
-        is_deleted=False
+    
+    # Subquery: count items by collection where author matches current user
+    item_counts = db.session.query(
+        Item.collection_id,
+        func.count(Item.id).label('total_count'),
+        func.sum(case((Item.needs_review == True, 1), else_=0)).label('need_review_count')
+    ).filter(
+        Item.author_id == current_user_id
+    ).group_by(Item.collection_id).subquery()
+    
+    # Join collections with counts
+    collections = db.session.query(
+        Collection, 
+        func.coalesce(item_counts.c.total_count, 0).label('total_count'),
+        func.coalesce(item_counts.c.need_review_count, 0).label('need_review_count')
+    ).outerjoin(
+        item_counts, Collection.id == item_counts.c.collection_id
+    ).filter(
+        Collection.user_id == current_user_id,
+        Collection.is_deleted == False
     ).order_by(Collection.created_at.desc()).all()
     
-    return jsonify([c.to_dict() for c in collections]), 200
+    result = []
+    for c, total, need_review in collections:
+        data = c.to_dict()
+        data['total_count'] = total
+        data['need_review_count'] = need_review
+        result.append(data)
+    
+    return jsonify(result), 200
 
 @bp.route('', methods=['POST'])
 @jwt_required()

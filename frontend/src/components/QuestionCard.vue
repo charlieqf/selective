@@ -18,8 +18,7 @@ const difficultyStars = computed(() => {
 const statusColors = {
   UNANSWERED: 'bg-gray-100 text-gray-700',
   ANSWERED: 'bg-blue-100 text-blue-700',
-  MASTERED: 'bg-green-100 text-green-700',
-  NEED_REVIEW: 'bg-yellow-100 text-yellow-700'
+  MASTERED: 'bg-green-100 text-green-700'
 }
 </script>
 

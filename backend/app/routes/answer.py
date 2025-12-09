@@ -54,8 +54,10 @@ def submit_answer(item_id):
     # Update Item status logic
     if is_correct:
         item.status = 'MASTERED'
+        item.needs_review = False  # Clear review flag on correct answer
     else:
-        item.status = 'NEED_REVIEW'
+        item.status = 'ANSWERED'  # Still counts as answered
+        item.needs_review = True  # Mark for review on wrong answer
     
     db.session.commit()
     
@@ -94,7 +96,7 @@ def get_review_session():
     
     query = Item.query.filter_by(
         author_id=current_user_id,
-        status='NEED_REVIEW'
+        needs_review=True
     )
     
     if subject:

@@ -30,4 +30,33 @@ test.describe('Dashboard', () => {
         const viewAllBtn = page.locator('button:has-text("View All Questions")')
         await expect(viewAllBtn).toBeVisible()
     })
+
+    test('should display Collections section with counts', async ({ page }) => {
+        // Check for Collections heading
+        const collectionsHeading = page.locator('h2:has-text("Collections")')
+        await expect(collectionsHeading).toBeVisible()
+
+        // Check that collection cards exist (if any)
+        const collectionCards = page.locator('.n-card:has-text("Total:")')
+        const count = await collectionCards.count()
+
+        if (count > 0) {
+            // Verify first collection card has the expected structure
+            const firstCard = collectionCards.first()
+            await expect(firstCard.locator('text=Total:')).toBeVisible()
+            await expect(firstCard.locator('text=Need Review:')).toBeVisible()
+        }
+    })
+
+    test('should navigate to review list when clicking Review button', async ({ page }) => {
+        // Find a Review button (only visible if need_review_count > 0)
+        const reviewBtn = page.locator('button:has-text("Review (")').first()
+        const hasReviewBtn = await reviewBtn.count() > 0
+
+        if (hasReviewBtn) {
+            await reviewBtn.click()
+            // Should navigate to questions list with needs_review filter
+            await expect(page).toHaveURL(/\/questions\?.*needs_review=true/, { timeout: 5000 })
+        }
+    })
 })

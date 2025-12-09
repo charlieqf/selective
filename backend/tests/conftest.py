@@ -57,3 +57,15 @@ def other_auth_headers(app, client):
         })
         token = response.json['token']
         return {'Authorization': f'Bearer {token}'}
+
+# Alias for consistency
+other_user_headers = other_auth_headers
+
+@pytest.fixture
+def seed_item(client, auth_headers):
+    """Create a test item owned by the authenticated user"""
+    response = client.post('/api/items', json={
+        'title': 'Test Question',
+        'difficulty': 3
+    }, headers=auth_headers)
+    return response.json

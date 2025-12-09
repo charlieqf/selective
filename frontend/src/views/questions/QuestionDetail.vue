@@ -64,7 +64,6 @@ const statusColor = computed(() => {
   const colorMap = {
     'UNANSWERED': 'default',
     'ANSWERED': 'info',
-    'NEED_REVIEW': 'warning',
     'MASTERED': 'success'
   }
   return colorMap[status] || 'default'
@@ -76,7 +75,6 @@ const statusLabel = computed(() => {
   const labelMap = {
     'UNANSWERED': 'Unanswered',
     'ANSWERED': 'Answered',
-    'NEED_REVIEW': 'Need Review',
     'MASTERED': 'Mastered'
   }
   return labelMap[status] || status
@@ -162,6 +160,22 @@ async function rotateImage(index, angle) {
     rotating.value = false
   }
 }
+
+async function toggleNeedReview() {
+  const newNeedsReview = !item.value.needs_review
+  
+  try {
+    const response = await itemsApi.toggleReview(item.value.id, newNeedsReview)
+    itemStore.currentItem = { 
+      ...item.value, 
+      needs_review: response.data.needs_review,
+      status: response.data.status 
+    }
+    message.success(newNeedsReview ? 'Marked for review' : 'Review mark removed')
+  } catch (error) {
+    message.error('Operation failed')
+  }
+}
 </script>
 
 <template>
@@ -182,6 +196,13 @@ async function rotateImage(index, angle) {
         <div class="flex items-center justify-between mb-4">
           <n-button @click="handleBack" data-testid="back-button">← Back to Questions</n-button>
           <n-space v-if="canEdit">
+            <n-button 
+              :type="item.needs_review ? 'warning' : 'default'"
+              @click="toggleNeedReview"
+              data-testid="toggle-review-btn"
+            >
+              {{ item.needs_review ? 'Remove Review Mark' : 'Mark for Review' }}
+            </n-button>
             <n-button @click="handleEdit">Edit</n-button>
             <n-button type="error" @click="handleDelete">Delete</n-button>
           </n-space>

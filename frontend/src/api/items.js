@@ -35,5 +35,14 @@ export default {
 
     getReviewSession(params) {
         return client.get('/items/review-session', { params })
+    },
+
+    updateStatus(id, status) {
+        return client.patch(`/items/${id}/status`, { status })
+    },
+
+    toggleReview(id, needsReview) {
+        // Toggle or set the needs_review flag
+        return client.patch(`/items/${id}/review`, { needs_review: needsReview })
     }
 }

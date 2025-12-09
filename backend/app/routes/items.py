@@ -49,6 +49,11 @@ def get_items():
     if status:
         query = query.filter_by(status=status)
     
+    # Needs review filter
+    needs_review = request.args.get('needs_review')
+    if needs_review and needs_review.lower() == 'true':
+        query = query.filter_by(needs_review=True)
+    
     # Tag filtering (AND logic)
     for tag_name in tags:
         query = query.filter(Item.tags.any(func.lower(Tag.name) == tag_name.lower()))
@@ -328,3 +333,66 @@ def delete_item(id):
         db.session.rollback()
         print(f"Delete item error: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
+
+@bp.route('/<int:id>/status', methods=['PATCH'])
+@jwt_required()
+def update_item_status(id):
+    """Update item learning status (UNANSWERED, ANSWERED, MASTERED)"""
+    current_user_id = get_jwt_identity()
+    
+    # Return 404 for non-owned items (hides existence)
+    item = Item.query.filter_by(id=id, author_id=current_user_id).first()
+    if not item:
+        return jsonify({'error': 'Item not found'}), 404
+    
+    # Validate request body exists
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({'error': 'Request body required'}), 400
+    if 'status' not in data:
+        return jsonify({'error': 'status field is required'}), 400
+    
+    new_status = data.get('status')
+    # Match DB CHECK constraint - no NEED_REVIEW
+    allowed_statuses = ['UNANSWERED', 'ANSWERED', 'MASTERED']
+    if new_status not in allowed_statuses:
+        return jsonify({'error': f'Invalid status. Allowed: {allowed_statuses}'}), 400
+    
+    item.status = new_status
+    db.session.commit()
+    
+    return jsonify({
+        'status': item.status, 
+        'id': item.id,
+        'needs_review': item.needs_review
+    }), 200
+
+@bp.route('/<int:id>/review', methods=['PATCH'])
+@jwt_required()
+def toggle_review(id):
+    """Toggle needs_review flag independently of status"""
+    current_user_id = get_jwt_identity()
+    
+    item = Item.query.filter_by(id=id, author_id=current_user_id).first()
+    if not item:
+        return jsonify({'error': 'Item not found'}), 404
+    
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({'error': 'Request body required'}), 400
+    
+    # Accept explicit value or toggle
+    if 'needs_review' in data:
+        item.needs_review = bool(data['needs_review'])
+    else:
+        # Toggle if no explicit value
+        item.needs_review = not item.needs_review
+    
+    db.session.commit()
+    
+    return jsonify({
+        'id': item.id,
+        'needs_review': item.needs_review,
+        'status': item.status
+    }), 200
+

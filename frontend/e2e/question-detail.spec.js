@@ -81,4 +81,32 @@ test.describe('Question Detail', () => {
         await expect(editButton).toBeVisible()
         await expect(deleteButton).toBeVisible()
     })
+
+    test('should toggle Need Review status', async ({ page }) => {
+        // Navigate to first question
+        await page.locator('[data-testid="question-card"]').first().click()
+        await page.waitForURL(/\/questions\/\d+/)
+
+        // Find the toggle review button
+        const toggleBtn = page.locator('[data-testid="toggle-review-btn"]')
+        await expect(toggleBtn).toBeVisible()
+
+        // Get initial button text
+        const initialText = await toggleBtn.innerText()
+        const wasMarkedForReview = initialText.includes('Remove')
+
+        // Click to toggle
+        await toggleBtn.click()
+
+        // Wait for status change (button text should change)
+        if (wasMarkedForReview) {
+            await expect(toggleBtn).toHaveText('Mark for Review', { timeout: 5000 })
+        } else {
+            await expect(toggleBtn).toHaveText('Remove Review Mark', { timeout: 5000 })
+        }
+
+        // Toggle back to original state
+        await toggleBtn.click()
+        await expect(toggleBtn).toHaveText(initialText, { timeout: 5000 })
+    })
 })

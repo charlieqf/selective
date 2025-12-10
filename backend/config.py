@@ -35,6 +35,9 @@ class Config:
     # CORS配置
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:5173').split(',')
     
+    # Google OAuth配置
+    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
+    
     # 科目配置（MVP: 固定4门科目）
     SUBJECTS = {
         'READING': {

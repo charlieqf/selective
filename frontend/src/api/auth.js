@@ -9,5 +9,8 @@ export const authApi = {
     },
     getCurrentUser() {
         return client.get('/auth/me')
+    },
+    googleLogin(data) {
+        return client.post('/auth/google', data)
     }
 }

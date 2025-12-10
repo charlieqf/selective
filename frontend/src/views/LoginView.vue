@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage, NForm, NFormItem, NInput, NButton, NCard } from 'naive-ui'
 import { useAuthStore } from '../stores/auth'
@@ -11,6 +11,7 @@ const authStore = useAuthStore()
 
 const formRef = ref(null)
 const loading = ref(false)
+const googleLoaded = ref(false)
 const model = ref({
   username: '',
   password: ''
@@ -26,6 +27,98 @@ const rules = {
     required: true,
     message: 'Please enter your password',
     trigger: ['input', 'blur']
+  }
+}
+
+// Google Sign-In initialization
+onMounted(() => {
+  const checkGoogle = setInterval(() => {
+    if (window.google?.accounts?.id) {
+      clearInterval(checkGoogle)
+      initializeGoogleSignIn()
+    }
+  }, 100)
+  
+  // Timeout after 5 seconds
+  setTimeout(() => {
+    clearInterval(checkGoogle)
+    if (!googleLoaded.value) {
+      console.warn('Google Sign-In SDK failed to load')
+    }
+  }, 5000)
+})
+
+function initializeGoogleSignIn() {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  if (!clientId) {
+    console.warn('VITE_GOOGLE_CLIENT_ID not configured')
+    return
+  }
+  
+  // Mark as loaded first so the container div is rendered
+  googleLoaded.value = true
+  
+  // Wait for next tick to ensure DOM is ready
+  setTimeout(() => {
+    const buttonContainer = document.getElementById('google-signin-btn')
+    if (!buttonContainer) {
+      console.warn('Google button container not found')
+      return
+    }
+    
+    try {
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleLogin,
+        auto_select: false,
+        cancel_on_tap_outside: true
+      })
+      
+      window.google.accounts.id.renderButton(
+        buttonContainer,
+        { 
+          theme: 'outline', 
+          size: 'large', 
+          text: 'signin_with',
+          width: 300 
+        }
+      )
+    } catch (error) {
+      console.error('Failed to initialize Google Sign-In:', error)
+    }
+  }, 100)
+}
+
+function getCookie(name) {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop().split(';').shift()
+  return null
+}
+
+async function handleGoogleLogin(response) {
+  try {
+    loading.value = true
+    
+    // Get CSRF token from cookie (set by Google SDK)
+    const gCsrfToken = getCookie('g_csrf_token')
+    
+    const { data } = await authApi.googleLogin({
+      credential: response.credential,
+      g_csrf_token: gCsrfToken
+    })
+    
+    authStore.login(data.user, data.token)
+    message.success('Login successful')
+    router.push('/dashboard')
+  } catch (error) {
+    if (error.response?.data?.error) {
+      message.error(error.response.data.error)
+    } else {
+      message.error('Google login failed. Please try again.')
+    }
+  } finally {
+    loading.value = false
   }
 }
 
@@ -45,7 +138,6 @@ async function handleLogin(e) {
     if (error.response) {
       message.error(error.response.data.error || 'Login failed')
     } else if (error.message) {
-      // Validation error or other
       console.error(error)
     }
   } finally {
@@ -83,6 +175,21 @@ async function handleLogin(e) {
             </n-button>
           </div>
         </n-form>
+        
+        <!-- Divider -->
+        <div class="flex items-center my-4">
+          <div class="flex-1 border-t border-gray-300"></div>
+          <span class="px-4 text-gray-500 text-sm">OR</span>
+          <div class="flex-1 border-t border-gray-300"></div>
+        </div>
+        
+        <!-- Google Sign-In Button -->
+        <div class="flex justify-center">
+          <div v-if="googleLoaded" id="google-signin-btn"></div>
+          <div v-else id="google-signin-btn" class="text-center text-gray-500 text-sm py-2">
+            Loading Google Sign-In...
+          </div>
+        </div>
         
         <div class="text-center mt-4">
           <span class="text-gray-600">Don't have an account? </span>

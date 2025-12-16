@@ -11,6 +11,9 @@ ENV/
 dist/
 build/
 
+# Secrets
+client_secret*.json
+
 # Environment variables
 .env.local
 .env.*.local

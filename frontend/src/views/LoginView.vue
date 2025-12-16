@@ -31,7 +31,15 @@ const rules = {
 }
 
 // Google Sign-In initialization
+// Google Sign-In initialization
 onMounted(() => {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  if (!clientId) {
+    // Rely on the initialize function to show the warning, don't poll
+    initializeGoogleSignIn()
+    return
+  }
+
   const checkGoogle = setInterval(() => {
     if (window.google?.accounts?.id) {
       clearInterval(checkGoogle)
@@ -42,7 +50,7 @@ onMounted(() => {
   // Timeout after 5 seconds
   setTimeout(() => {
     clearInterval(checkGoogle)
-    if (!googleLoaded.value) {
+    if (!googleLoaded.value && clientId) {
       console.warn('Google Sign-In SDK failed to load')
     }
   }, 5000)

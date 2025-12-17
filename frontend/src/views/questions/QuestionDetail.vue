@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useItemStore } from '../../stores/items'
 import { useAuthStore } from '../../stores/auth'
@@ -9,7 +9,7 @@ import AnswerSection from '../../components/AnswerSection.vue'
 import { NCard, NSpace, NTag, NButton, NCarousel, NEmpty, NIcon, useMessage } from 'naive-ui'
 import { Cloudinary } from '@cloudinary/url-gen'
 import { byAngle } from '@cloudinary/url-gen/actions/rotate'
-import { Refresh, ArrowUndo, ArrowRedo } from '@vicons/ionicons5'
+import { ArrowUndo, ArrowRedo, ArrowBack, Flag, Create, Trash, CheckmarkCircle, CloseCircle } from '@vicons/ionicons5'
 
 const route = useRoute()
 const router = useRouter()
@@ -55,7 +55,7 @@ const item = computed(() => itemStore.currentItem)
 
 const difficultyStars = computed(() => {
   if (!item.value) return ''
-  return '⭐'.repeat(item.value.difficulty || 3)
+  return '*'.repeat(item.value.difficulty || 3)
 })
 
 const statusColor = computed(() => {
@@ -194,17 +194,37 @@ async function toggleNeedReview() {
       <!-- Header -->
       <div class="mb-6">
         <div class="flex items-center justify-between mb-4">
-          <n-button @click="handleBack" data-testid="back-button">← Back to Questions</n-button>
-          <n-space v-if="canEdit">
+          <n-button @click="handleBack" data-testid="back-button" aria-label="Back to Questions">
+            <template #icon>
+              <n-icon><ArrowBack /></n-icon>
+            </template>
+            <span class="hidden md:inline">Back to Questions</span>
+          </n-button>
+          
+          <n-space v-if="canEdit" class="flex-nowrap">
             <n-button 
               :type="item.needs_review ? 'warning' : 'default'"
               @click="toggleNeedReview"
               data-testid="toggle-review-btn"
+              :title="item.needs_review ? 'Remove Review Mark' : 'Mark for Review'"
             >
-              {{ item.needs_review ? 'Remove Review Mark' : 'Mark for Review' }}
+              <template #icon>
+                <n-icon><Flag /></n-icon>
+              </template>
+              <span class="hidden md:inline">{{ item.needs_review ? 'Remove Review Mark' : 'Mark for Review' }}</span>
             </n-button>
-            <n-button @click="handleEdit">Edit</n-button>
-            <n-button type="error" @click="handleDelete">Delete</n-button>
+            <n-button @click="handleEdit" title="Edit">
+              <template #icon>
+                <n-icon><Create /></n-icon>
+              </template>
+              <span class="hidden md:inline">Edit</span>
+            </n-button>
+            <n-button type="error" @click="handleDelete" title="Delete">
+              <template #icon>
+                <n-icon><Trash /></n-icon>
+              </template>
+              <span class="hidden md:inline">Delete</span>
+            </n-button>
           </n-space>
         </div>
         
@@ -293,7 +313,10 @@ async function toggleNeedReview() {
             class="flex items-center justify-between p-3 rounded bg-gray-50 border border-gray-100"
           >
             <div class="flex items-center space-x-3">
-              <span class="text-2xl">{{ answer.is_correct ? '✅' : '❌' }}</span>
+              <span class="text-2xl">
+                <n-icon v-if="answer.is_correct" color="#10b981"><CheckmarkCircle /></n-icon>
+                <n-icon v-else color="#ef4444"><CloseCircle /></n-icon>
+              </span>
               <div>
                 <div class="font-medium">{{ answer.is_correct ? 'Correct' : 'Incorrect' }}</div>
                 <div class="text-xs text-gray-500">{{ new Date(answer.created_at).toLocaleString() }}</div>

@@ -157,17 +157,17 @@ async function handleLogin(e) {
 <template>
   <div class="mx-auto" style="max-width: 400px;">
     <n-card>
-      <div class="text-center mb-4">
-        <h2 class="text-2xl font-extrabold text-gray-900">
+      <div class="text-center mb-2">
+        <h2 class="text-xl font-extrabold text-gray-900">
           Sign in
         </h2>
       </div>
         
-        <n-form ref="formRef" :model="model" :rules="rules">
+        <n-form ref="formRef" :model="model" :rules="rules" size="medium">
           <n-form-item path="username" label="Username">
             <n-input v-model:value="model.username" placeholder="Username" @keydown.enter.prevent />
           </n-form-item>
-          <n-form-item path="password" label="Password">
+          <n-form-item path="password" label="Password" class="-mt-4">
             <n-input
               v-model:value="model.password"
               type="password"
@@ -204,5 +204,4 @@ async function handleLogin(e) {
         </div>
       </n-card>
     </div>
-  </div>
 </template>

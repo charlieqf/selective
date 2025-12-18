@@ -106,16 +106,16 @@ async function handleRegister(e) {
 <template>
   <div class="mx-auto" style="max-width: 400px;">
     <n-card>
-      <div class="text-center mb-4">
-        <h2 class="text-2xl font-extrabold text-gray-900">
+      <div class="text-center mb-2">
+        <h2 class="text-xl font-extrabold text-gray-900">
           Create account
         </h2>
-          <p class="mt-2 text-sm text-gray-600">
+          <p class="mt-1 text-xs text-gray-600">
             Join Selective to start your learning journey
           </p>
         </div>
         
-        <n-form ref="formRef" :model="model" :rules="rules">
+        <n-form ref="formRef" :model="model" :rules="rules" size="medium">
           <!-- Role Selection -->
           <n-form-item path="role" label="I am a...">
             <n-radio-group v-model:value="model.role" name="role-group" class="w-full">
@@ -131,11 +131,11 @@ async function handleRegister(e) {
             <n-input v-model:value="model.username" placeholder="Username" />
           </n-form-item>
           
-          <n-form-item path="email" label="Email">
+          <n-form-item path="email" label="Email" class="-mt-4">
             <n-input v-model:value="model.email" placeholder="Email" />
           </n-form-item>
           
-          <n-form-item path="password" label="Password">
+          <n-form-item path="password" label="Password" class="-mt-4">
             <n-space vertical class="w-full">
               <n-input
                 v-model:value="model.password"
@@ -180,5 +180,4 @@ async function handleRegister(e) {
         </div>
       </n-card>
     </div>
-  </div>
 </template>

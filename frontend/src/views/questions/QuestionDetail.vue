@@ -6,6 +6,7 @@ import { useAuthStore } from '../../stores/auth'
 import itemsApi from '@/api/items'
 import LoadingSpinner from '../../components/LoadingSpinner.vue'
 import AnswerSection from '../../components/AnswerSection.vue'
+import ImageLightbox from '../../components/ImageLightbox.vue'
 import { NCard, NSpace, NTag, NButton, NCarousel, NEmpty, NIcon, useMessage } from 'naive-ui'
 import { Cloudinary } from '@cloudinary/url-gen'
 import { byAngle } from '@cloudinary/url-gen/actions/rotate'
@@ -19,6 +20,10 @@ const message = useMessage()
 const answerHistory = ref([])
 const loadingHistory = ref(false)
 const rotating = ref(false)
+
+// Lightbox state
+const showLightbox = ref(false)
+const lightboxIndex = ref(0)
 
 // Cloudinary instance
 const cld = new Cloudinary({
@@ -83,6 +88,17 @@ const statusLabel = computed(() => {
 const canEdit = computed(() => {
   return item.value?.author_id === authStore.user?.id
 })
+
+// Computed array of image URLs for lightbox
+const lightboxImages = computed(() => {
+  if (!item.value?.images) return []
+  return item.value.images.map(image => getRotatedUrl(image))
+})
+
+function openLightbox(index) {
+  lightboxIndex.value = index
+  showLightbox.value = true
+}
 
 function handleBack() {
   router.push('/questions')
@@ -256,8 +272,10 @@ async function toggleNeedReview() {
           >
             <img
               :src="getRotatedUrl(image)"
-              class="w-full h-auto object-contain max-h-96 transition-transform duration-300"
+              class="w-full h-auto object-contain max-h-96 transition-transform duration-300 cursor-pointer hover:opacity-90"
               :alt="`Question image ${index + 1}`"
+              @click="openLightbox(index)"
+              data-testid="question-image"
             />
             <div class="mt-2 text-sm text-gray-600" data-testid="image-counter">
               Image {{ index + 1 }} of {{ item.images.length }}
@@ -331,6 +349,14 @@ async function toggleNeedReview() {
       </n-card>
     </template>
   </div>
+
+  <!-- Image Lightbox for fullscreen viewing -->
+  <ImageLightbox
+    :images="lightboxImages"
+    :initial-index="lightboxIndex"
+    :show="showLightbox"
+    @close="showLightbox = false"
+  />
 </template>
 
 <style scoped>

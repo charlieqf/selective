@@ -31,6 +31,13 @@ function goToReview(collectionId) {
     query: { collection_id: collectionId, needs_review: 'true' }
   })
 }
+
+function goToCollection(collectionId) {
+  router.push({
+    path: '/questions',
+    query: { collection_id: collectionId }
+  })
+}
 </script>
 
 <template>
@@ -45,29 +52,44 @@ function goToReview(collectionId) {
     <LoadingSpinner v-if="analyticsStore.loading" text="Loading dashboard..." />
 
     <template v-else>
-      <!-- 统计卡片 -->
-      <n-grid :cols="4" :x-gap="16" :y-gap="16" responsive="screen" class="mb-6">
-        <n-grid-item :span="4" :md-span="2" :lg-span="1">
-          <n-card>
-            <n-statistic label="Total Questions" :value="analyticsStore.stats?.total_questions || 0" />
-          </n-card>
-        </n-grid-item>
-        <n-grid-item :span="4" :md-span="2" :lg-span="1">
-          <n-card>
-            <n-statistic label="Answered" :value="analyticsStore.stats?.answered_questions || 0" />
-          </n-card>
-        </n-grid-item>
-        <n-grid-item :span="4" :md-span="2" :lg-span="1">
-          <n-card>
-            <n-statistic label="Mastered" :value="analyticsStore.stats?.mastered_questions || 0" />
-          </n-card>
-        </n-grid-item>
-        <n-grid-item :span="4" :md-span="2" :lg-span="1">
-          <n-card>
-            <n-statistic label="Need Review" :value="analyticsStore.stats?.need_review_questions || 0" />
-          </n-card>
-        </n-grid-item>
-      </n-grid>
+      <!-- 统计卡片 - 2x2 Grid -->
+      <div class="stats-grid mb-6">
+        <!-- Total Questions -->
+        <div class="stat-card stat-card--total">
+          <div class="stat-card__icon">📚</div>
+          <div class="stat-card__content">
+            <div class="stat-card__value">{{ analyticsStore.stats?.total_questions || 0 }}</div>
+            <div class="stat-card__label">Total Questions</div>
+          </div>
+        </div>
+        
+        <!-- Answered -->
+        <div class="stat-card stat-card--answered">
+          <div class="stat-card__icon">✅</div>
+          <div class="stat-card__content">
+            <div class="stat-card__value">{{ analyticsStore.stats?.answered_questions || 0 }}</div>
+            <div class="stat-card__label">Answered</div>
+          </div>
+        </div>
+        
+        <!-- Mastered -->
+        <div class="stat-card stat-card--mastered">
+          <div class="stat-card__icon">🏆</div>
+          <div class="stat-card__content">
+            <div class="stat-card__value">{{ analyticsStore.stats?.mastered_questions || 0 }}</div>
+            <div class="stat-card__label">Mastered</div>
+          </div>
+        </div>
+        
+        <!-- Need Review -->
+        <div class="stat-card stat-card--review">
+          <div class="stat-card__icon">🔄</div>
+          <div class="stat-card__content">
+            <div class="stat-card__value">{{ analyticsStore.stats?.need_review_questions || 0 }}</div>
+            <div class="stat-card__label">Need Review</div>
+          </div>
+        </div>
+      </div>
 
       <!-- 快捷操作 -->
       <n-space class="mb-6">
@@ -100,7 +122,15 @@ function goToReview(collectionId) {
         <h2 class="text-2xl font-bold mb-4">Collections</h2>
         <n-grid :cols="4" :x-gap="16" :y-gap="16" responsive="screen">
           <n-grid-item v-for="collection in collectionStore.activeCollections" :key="collection.id" :span="4" :md-span="2" :lg-span="1">
-            <n-card :title="collection.name">
+            <n-card>
+              <template #header>
+                <router-link 
+                  :to="{ path: '/questions', query: { collection_id: collection.id } }"
+                  class="collection-title"
+                >
+                  {{ collection.name }}
+                </router-link>
+              </template>
               <n-space vertical>
                 <div>Total: {{ collection.total_count || 0 }}</div>
                 <div>Need Review: {{ collection.need_review_count || 0 }}</div>
@@ -122,3 +152,101 @@ function goToReview(collectionId) {
     </template>
   </div>
 </template>
+
+<style scoped>
+/* 2x2 Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* Stat Card Base Styles */
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card__icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.stat-card__content {
+  flex: 1;
+}
+
+.stat-card__value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.stat-card__label {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  margin-top: 4px;
+}
+
+/* Card Color Variants */
+.stat-card--total {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card--answered {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.stat-card--mastered {
+  background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
+}
+
+.stat-card--review {
+  background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+}
+
+/* Collection Title Link */
+.collection-title {
+  color: #18a058;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.collection-title:hover {
+  color: #0c7a43;
+  text-decoration: underline;
+}
+
+/* Responsive: Stack to 1 column on very small screens */
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-card {
+    padding: 16px;
+  }
+  
+  .stat-card__icon {
+    font-size: 2rem;
+  }
+  
+  .stat-card__value {
+    font-size: 1.5rem;
+  }
+}
+</style>

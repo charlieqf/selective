@@ -91,25 +91,14 @@ function toggleNeedsReview(checked) {
         :checked="filters.needs_review === 'true'"
         @update:checked="toggleNeedsReview"
         data-testid="needs-review-filter"
-        class="items-start md:items-center"
       >
-        <span class="writing-mode-vertical md:writing-mode-horizontal text-xs md:text-sm leading-tight md:leading-normal block h-24 md:h-auto">
-          Needs Review
-        </span>
+        Needs Review
       </n-checkbox>
     </div>
   </div>
 </template>
 
 <style scoped>
-.writing-mode-vertical {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  transform: rotate(180deg);
-}
-.writing-mode-horizontal {
-  writing-mode: horizontal-tb;
-  transform: none;
-}
+/* No custom styles needed */
 </style>
 

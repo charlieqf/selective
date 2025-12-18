@@ -6,12 +6,11 @@ Based on the current codebase analysis, the following improvements are proposed 
 
 ### Question List: Filters Layout
 **Problem**:
--   **"Needs Review" Checkbox**: Misaligned and takes up too much horizontal space on mobile.
 -   **Dropdowns**: Options text is truncated because 3 dropdowns are squeezed into one row.
 
 **Solution**:
 -   **Stacked Dropdowns**: On mobile, stack the 3 dropdowns vertically (one per row) to ensure full width for text visibility.
--   **Vertical Checkbox**: Place the "Needs Review" checkbox on the right side with vertical text orientation (`writing-mode: vertical-rl`) to save horizontal space while remaining accessible.
+-   **Checkbox**: Keep the "Needs Review" checkbox with normal horizontal text layout.
 
 ### Question Detail: Action Buttons
 **Problem**:
@@ -88,7 +87,7 @@ Move filters into a **Side Drawer (Off-canvas)** or a **Bottom Sheet**.
 </n-drawer>
 ```
 
-## 3. Image Lightbox (Zoom & Pan)
+## 3. Image Lightbox (Zoom & Pan) ✅ IMPLEMENTED
 
 **Problem**: Question images (especially containing text or diagrams) are small on mobile screens. Users cannot easily read details without zooming, which might zoom the entire page or layout.
 
@@ -104,7 +103,8 @@ Implement a **Lightbox** component.
     -   Close button (top right) or swipe-to-close.
 
 **Implementation**:
--   Use a library like `vue-easy-lightbox` or build a simple overlay with CSS transforms.
+-   Created `ImageLightbox.vue` component with full mobile touch gesture support.
+-   Integrated into `QuestionDetail.vue` - clicking any question image opens the lightbox.
 
 ## 4. Swipe Navigation
 

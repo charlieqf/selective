@@ -51,7 +51,7 @@ function toggleNeedsReview(checked) {
 </script>
 
 <template>
-  <div class="flex flex-row md:items-center gap-4 mb-4">
+  <div class="flex flex-col md:flex-row md:items-center gap-4 mb-4">
     <!-- Dropdowns: Stack on mobile, Row on desktop -->
     <div class="flex flex-col md:flex-row gap-4 flex-1 min-w-0">
       <!-- Subject Filter (uses collections) -->

@@ -117,9 +117,9 @@ function goToCollection(collectionId) {
         />
       </div>
 
-      <!-- Collections -->
+      <!-- Subjects -->
       <div>
-        <h2 class="text-2xl font-bold mb-4">Collections</h2>
+        <h2 class="text-2xl font-bold mb-4">Subjects</h2>
         <n-grid :cols="4" :x-gap="16" :y-gap="16" responsive="screen">
           <n-grid-item v-for="collection in collectionStore.activeCollections" :key="collection.id" :span="4" :md-span="2" :lg-span="1">
             <n-card>

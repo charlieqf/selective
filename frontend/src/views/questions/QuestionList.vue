@@ -117,6 +117,17 @@ const activeTags = ref([])
 
 // Initialize from URL query
 onMounted(() => {
+  // Read collection_id from URL
+  if (route.query.collection_id) {
+    filters.value.collection_id = parseInt(route.query.collection_id)
+  }
+  
+  // Read needs_review from URL
+  if (route.query.needs_review === 'true') {
+    filters.value.status = 'NEEDS_REVIEW'
+  }
+  
+  // Read tag from URL
   const tagParam = route.query.tag
   if (tagParam) {
     activeTags.value = Array.isArray(tagParam) ? tagParam : [tagParam]
@@ -124,7 +135,17 @@ onMounted(() => {
   handleRefresh()
 })
 
-// Watch for route query changes
+// Watch for route query changes (collection_id)
+watch(() => route.query.collection_id, (newCollectionId) => {
+  if (newCollectionId) {
+    filters.value.collection_id = parseInt(newCollectionId)
+  } else {
+    filters.value.collection_id = null
+  }
+  handleRefresh()
+})
+
+// Watch for route query changes (tag)
 watch(() => route.query.tag, (newTag) => {
   if (newTag) {
     activeTags.value = Array.isArray(newTag) ? newTag : [newTag]

@@ -61,11 +61,10 @@ function handleLogout() {
     >
       <div class="p-4">
         <router-link v-if="!collapsed" to="/dashboard" class="no-underline flex items-center gap-2">
-          <img src="/logo.png" alt="Selective Prep" class="w-8 h-8 object-contain" />
-          <span class="text-xl font-bold text-primary">Selective Prep</span>
+          <img src="/logo.png" alt="Selective Prep" class="h-10 w-auto max-w-[160px] object-contain" />
         </router-link>
         <router-link v-else to="/dashboard" class="block text-center">
-          <img src="/logo.png" alt="S" class="w-8 h-8 object-contain mx-auto" />
+          <span class="text-xl font-bold text-primary">S</span>
         </router-link>
       </div>
       <n-menu 
@@ -79,10 +78,9 @@ function handleLogout() {
       <!-- 顶部导航栏 -->
       <n-layout-header bordered class="p-4 flex justify-between items-center">
         <div>
-          <!-- 移动端显示 Logo + 标题 -->
-          <router-link v-if="isMobile" to="/dashboard" class="no-underline flex items-center gap-2">
-            <img src="/logo.png" alt="Selective Prep" class="w-7 h-7 object-contain" />
-            <span class="text-lg font-bold text-primary">Selective Prep</span>
+          <!-- 移动端显示 Logo -->
+          <router-link v-if="isMobile" to="/dashboard" class="no-underline">
+            <img src="/logo.png" alt="Selective Prep" class="h-8 w-auto max-w-[140px] object-contain" />
           </router-link>
         </div>
         <div class="flex items-center gap-2">

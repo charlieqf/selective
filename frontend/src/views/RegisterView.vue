@@ -104,13 +104,12 @@ async function handleRegister(e) {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="w-full" style="max-width: 400px;">
-      <n-card>
-        <div class="text-center mb-6">
-          <h2 class="text-3xl font-extrabold text-gray-900">
-            Create account
-          </h2>
+  <div class="mx-auto" style="max-width: 400px;">
+    <n-card>
+      <div class="text-center mb-4">
+        <h2 class="text-2xl font-extrabold text-gray-900">
+          Create account
+        </h2>
           <p class="mt-2 text-sm text-gray-600">
             Join Selective to start your learning journey
           </p>

@@ -199,21 +199,21 @@ function goToCollection(collectionId) {
   margin-top: 4px;
 }
 
-/* Card Color Variants */
+/* Card Color Variants - Clean & Professional */
 .stat-card--total {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4a5568 0%, #718096 100%);
 }
 
 .stat-card--answered {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  background: linear-gradient(135deg, #3182ce 0%, #63b3ed 100%);
 }
 
 .stat-card--mastered {
-  background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
+  background: linear-gradient(135deg, #38a169 0%, #68d391 100%);
 }
 
 .stat-card--review {
-  background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+  background: linear-gradient(135deg, #dd6b20 0%, #ed8936 100%);
 }
 
 /* Collection Title Link */

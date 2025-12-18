@@ -60,10 +60,13 @@ function handleLogout() {
       @expand="collapsed = false"
     >
       <div class="p-4">
-        <router-link v-if="!collapsed" to="/dashboard" class="no-underline">
-          <h1 class="text-xl font-bold text-primary cursor-pointer hover:text-primary-600 transition-colors">Selective Prep</h1>
+        <router-link v-if="!collapsed" to="/dashboard" class="no-underline flex items-center gap-2">
+          <img src="/logo.png" alt="Selective Prep" class="w-8 h-8 object-contain" />
+          <span class="text-xl font-bold text-primary">Selective Prep</span>
         </router-link>
-        <h1 v-else class="text-xl font-bold text-primary text-center">S</h1>
+        <router-link v-else to="/dashboard" class="block text-center">
+          <img src="/logo.png" alt="S" class="w-8 h-8 object-contain mx-auto" />
+        </router-link>
       </div>
       <n-menu 
         :value="activeKey"
@@ -76,9 +79,10 @@ function handleLogout() {
       <!-- 顶部导航栏 -->
       <n-layout-header bordered class="p-4 flex justify-between items-center">
         <div>
-          <!-- 移动端显示标题 -->
-          <router-link to="/dashboard" class="no-underline">
-            <h1 v-if="isMobile" class="text-lg font-bold text-primary cursor-pointer">Selective Prep</h1>
+          <!-- 移动端显示 Logo + 标题 -->
+          <router-link v-if="isMobile" to="/dashboard" class="no-underline flex items-center gap-2">
+            <img src="/logo.png" alt="Selective Prep" class="w-7 h-7 object-contain" />
+            <span class="text-lg font-bold text-primary">Selective Prep</span>
           </router-link>
         </div>
         <div class="flex items-center gap-2">

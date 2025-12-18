@@ -60,7 +60,7 @@ function handleLogout() {
       @expand="collapsed = false"
     >
       <div class="p-4">
-        <router-link v-if="!collapsed" to="/dashboard" class="no-underline flex items-center gap-2">
+        <router-link v-if="!collapsed" to="/dashboard" class="no-underline flex items-center gap-2 hover:opacity-80 transition-opacity">
           <img src="/logo.png" alt="Selective Prep" class="h-10 w-auto max-w-[160px] object-contain" />
         </router-link>
         <router-link v-else to="/dashboard" class="block text-center">
@@ -79,7 +79,7 @@ function handleLogout() {
       <n-layout-header bordered class="p-4 flex justify-between items-center">
         <div>
           <!-- 移动端显示 Logo -->
-          <router-link v-if="isMobile" to="/dashboard" class="no-underline">
+          <router-link v-if="isMobile" to="/dashboard" class="no-underline flex items-center hover:opacity-80 transition-opacity">
             <img src="/logo.png" alt="Selective Prep" class="h-8 w-auto max-w-[140px] object-contain" />
           </router-link>
         </div>

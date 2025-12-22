@@ -132,8 +132,12 @@ function getRotatedUrl(image) {
   
   const rotation = image.rotation || 0
   
-  // If no rotation, return original URL
-  if (rotation === 0) return image.url
+  // If no rotation, return original URL with a cache buster
+  // This helps when rotating back to 0 so the browser doesn't show the old cached version
+  if (rotation === 0) {
+    const buster = item.value?.updated_at ? `?t=${new Date(item.value.updated_at).getTime()}` : ''
+    return `${image.url}${buster}`
+  }
   
   // Build Cloudinary URL with rotation
   const myImage = cld.image(image.public_id)
@@ -269,7 +273,7 @@ async function toggleNeedReview() {
         >
           <div
             v-for="(image, index) in item.images"
-            :key="index"
+            :key="`${image.public_id}-${image.rotation || 0}`"
             class="relative flex flex-col items-center justify-center p-4"
           >
             <img

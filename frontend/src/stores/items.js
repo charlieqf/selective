@@ -98,6 +98,32 @@ export const useItemStore = defineStore('items', {
             } finally {
                 this.loading = false
             }
+        },
+
+        async rotateImage(id, index, rotation) {
+            if (!this.currentItem) return
+
+            // Store current images for potential revert
+            const originalImages = JSON.parse(JSON.stringify(this.currentItem.images))
+
+            // Optimistic update
+            const updatedImages = [...this.currentItem.images]
+            updatedImages[index] = { ...updatedImages[index], rotation }
+            this.currentItem = { ...this.currentItem, images: updatedImages }
+
+            try {
+                const response = await itemsApi.rotateImage(id, index, rotation)
+                // Update with server values (updated_at)
+                this.currentItem = {
+                    ...this.currentItem,
+                    updated_at: response.data.updated_at
+                }
+                return response.data
+            } catch (error) {
+                // Revert on failure
+                this.currentItem = { ...this.currentItem, images: originalImages }
+                throw error
+            }
         }
     }
 })

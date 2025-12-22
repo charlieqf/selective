@@ -145,6 +145,8 @@ function getRotatedUrl(image) {
 async function rotateImage(index, angle) {
   if (rotating.value) return
   
+  console.log(`Rotating image at index: ${index} by ${angle} degrees`)
+  
   const images = [...item.value.images]
   const image = images[index]
   const currentRotation = image.rotation || 0
@@ -154,23 +156,23 @@ async function rotateImage(index, angle) {
   images[index] = { ...image, rotation: newRotation }
   
   // Update store immediately for UI responsiveness
-  // We need to clone to avoid direct mutation warning if store is strict
-  const updatedItem = { ...item.value, images }
-  itemStore.currentItem = updatedItem
+  // We clone the item and images array to ensure reactivity
+  itemStore.currentItem = { ...item.value, images: [...images] }
   
   rotating.value = true
   try {
     const response = await itemsApi.rotateImage(item.value.id, index, newRotation)
     // Update updated_at for cache busting
     itemStore.currentItem = { 
-      ...updatedItem, 
+      ...itemStore.currentItem, 
       updated_at: response.data.updated_at 
     }
     message.success('Image rotated')
   } catch (error) {
+    console.error('Rotation failed:', error)
     // Revert on error
     images[index] = { ...image, rotation: currentRotation }
-    itemStore.currentItem = { ...item.value, images }
+    itemStore.currentItem = { ...item.value, images: [...images] }
     message.error('Failed to save rotation')
   } finally {
     rotating.value = false

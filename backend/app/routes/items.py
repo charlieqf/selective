@@ -274,8 +274,20 @@ def rotate_image(id):
     if str(item.author_id) != str(current_user_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
-    data = request.get_json()
-    image_index = data.get('image_index', 0)
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({'error': 'Invalid or missing JSON body'}), 400
+        
+    image_index = data.get('image_index')
+    if image_index is None:
+        image_index = 0
+    
+    # Ensure image_index is an integer
+    try:
+        image_index = int(image_index)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'image_index must be an integer'}), 400
+        
     rotation = data.get('rotation', 0)
     
     # Validate

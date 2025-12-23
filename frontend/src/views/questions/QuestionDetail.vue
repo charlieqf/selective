@@ -128,22 +128,29 @@ function handleAnswerSubmitted(result) {
   fetchHistory(route.params.id)
 }
 
+// Get the stable base URL with cache buster for carousel display
+function getDisplayUrl(image) {
+  const imgObj = typeof image === 'string' ? { url: image } : image
+  if (!imgObj?.url) return ''
+  
+  const buster = item.value?.updated_at ? `?t=${new Date(item.value.updated_at).getTime()}` : ''
+  const separator = imgObj.url.includes('?') ? '&' : '?'
+  return `${imgObj.url}${buster ? separator + buster.slice(1) : ''}`
+}
+
+// Get the Cloudinary rotated URL for full-screen/processed view
 function getRotatedUrl(image) {
-  // Handle legacy string data or missing object
   const imgObj = typeof image === 'string' ? { url: image, rotation: 0 } : image
   if (!imgObj?.url) return ''
   
   const rotation = Number(imgObj.rotation) || 0
   const hasPublicId = !!imgObj.public_id
   
-  // If no rotation OR no public_id, return original URL with a cache buster
+  // If no rotation OR no public_id, return display URL (base + buster)
   if (rotation === 0 || !hasPublicId) {
-    const buster = item.value?.updated_at ? `?t=${new Date(item.value.updated_at).getTime()}` : ''
-    const separator = imgObj.url.includes('?') ? '&' : '?'
-    return `${imgObj.url}${buster ? separator + buster.slice(1) : ''}`
+    return getDisplayUrl(imgObj)
   }
   
-  // Build Cloudinary URL with rotation
   try {
     const myImage = cld.image(imgObj.public_id)
     myImage.rotate(byAngle(rotation))
@@ -262,7 +269,7 @@ async function toggleNeedReview() {
       <n-card title="Question Images" class="mb-6">
         <div v-if="item.images && item.images.length > 0" class="flex flex-col items-center">
           <n-carousel
-            v-model:index="currentIndex"
+            v-model:current-index="currentIndex"
             show-arrow
             draggable
             :loop="false"
@@ -276,8 +283,8 @@ async function toggleNeedReview() {
               class="relative flex flex-col items-center justify-center p-4"
             >
               <img
-                :key="`${image.public_id}-${image.rotation || 0}`"
-                :src="getRotatedUrl(image)"
+                :key="`${image.public_id || index}-${image.rotation || 0}`"
+                :src="getDisplayUrl(image)"
                 :style="getImageStyle(image)"
                 class="w-full h-auto object-contain max-h-96 cursor-pointer hover:opacity-90"
                 :alt="`Question image ${index + 1}`"

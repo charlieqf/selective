@@ -8,8 +8,8 @@ const props = defineProps({
 
 const emit = defineEmits(['click', 'tag-click'])
 
-const firstImage = computed(() => {
-  return props.item.images?.[0] || null
+const visibleImages = computed(() => {
+  return props.item.images?.slice(0, 4) || []
 })
 
 const difficultyStars = computed(() => {
@@ -25,13 +25,34 @@ const statusColors = {
 
 <template>
   <div class="card cursor-pointer hover:shadow-lg transition-shadow" data-testid="question-card" @click="emit('click', props.item)">
-    <div v-if="firstImage" class="mb-3 overflow-hidden rounded-md h-48 bg-gray-50 flex items-center justify-center">
-      <img 
-        :src="getDisplayUrl(firstImage, props.item.updated_at)" 
-        :style="getImageStyle(firstImage)"
-        :alt="props.item.title || 'Question'" 
-        class="max-w-full max-h-full object-contain transition-transform duration-300" 
-      />
+    <!-- Image Grid (up to 4 images) -->
+    <div 
+      v-if="visibleImages.length > 0" 
+      class="mb-3 overflow-hidden rounded-md h-40 bg-gray-50 grid gap-1"
+      :class="{
+        'grid-cols-1': visibleImages.length === 1,
+        'grid-cols-2': visibleImages.length >= 2,
+        'grid-rows-2': visibleImages.length >= 3
+      }"
+    >
+      <div 
+        v-for="(image, index) in visibleImages" 
+        :key="index"
+        class="relative overflow-hidden flex items-center justify-center bg-gray-100"
+      >
+        <img 
+          :src="getDisplayUrl(image, props.item.updated_at)" 
+          :style="getImageStyle(image)"
+          class="max-w-full max-h-full object-contain" 
+        />
+        <!-- More images indicator -->
+        <div 
+          v-if="index === 3 && props.item.images.length > 4" 
+          class="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-xs font-bold"
+        >
+          +{{ props.item.images.length - 4 }}
+        </div>
+      </div>
     </div>
     <div class="flex items-start justify-between mb-2">
       <span class="text-sm font-medium text-primary-600" data-testid="card-subject">{{ props.item.subject }}</span>

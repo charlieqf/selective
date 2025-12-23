@@ -9,7 +9,7 @@ import AnswerSection from '../../components/AnswerSection.vue'
 import ImageLightbox from '../../components/ImageLightbox.vue'
 import { NCard, NSpace, NTag, NButton, NCarousel, NEmpty, NIcon, useMessage } from 'naive-ui'
 import { ArrowUndo, ArrowRedo, ArrowBack, Flag, Create, Trash, CheckmarkCircle, CloseCircle } from '@vicons/ionicons5'
-import { getDisplayUrl, getRotatedUrl, getImageStyle } from '../../utils/image'
+import { getDisplayUrl, getImageStyle } from '../../utils/image'
 
 const route = useRoute()
 const router = useRouter()

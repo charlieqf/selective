@@ -38,6 +38,7 @@ watch(
   () => route.params.id,
   async (newId) => {
     if (newId) {
+      currentIndex.value = 0 // Reset index when question changes
       await itemStore.getItem(newId)
       fetchHistory(newId)
     }
@@ -90,10 +91,13 @@ const canEdit = computed(() => {
   return item.value?.author_id === authStore.user?.id
 })
 
-// Computed array of image URLs for lightbox
+// Computed array of image data for lightbox (URL + Rotation)
 const lightboxImages = computed(() => {
   if (!item.value?.images) return []
-  return item.value.images.map(image => getRotatedUrl(image))
+  return item.value.images.map(image => ({
+    url: getDisplayUrl(image),
+    rotation: Number(typeof image === 'string' ? 0 : image.rotation) || 0
+  }))
 })
 
 function openLightbox(index) {
@@ -129,13 +133,16 @@ function handleAnswerSubmitted(result) {
 }
 
 // Get the stable base URL with cache buster for carousel display
+// Safely appends buster without stripping existing signed/required query params
 function getDisplayUrl(image) {
   const imgObj = typeof image === 'string' ? { url: image } : image
   if (!imgObj?.url) return ''
   
-  const buster = item.value?.updated_at ? `?t=${new Date(item.value.updated_at).getTime()}` : ''
+  if (!item.value?.updated_at) return imgObj.url
+  
+  const buster = `t=${new Date(item.value.updated_at).getTime()}`
   const separator = imgObj.url.includes('?') ? '&' : '?'
-  return `${imgObj.url}${buster ? separator + buster.slice(1) : ''}`
+  return `${imgObj.url}${separator}${buster}`
 }
 
 // Get the Cloudinary rotated URL for full-screen/processed view
@@ -154,10 +161,14 @@ function getRotatedUrl(image) {
   try {
     const myImage = cld.image(imgObj.public_id)
     myImage.rotate(byAngle(rotation))
-    return myImage.toURL()
+    // Add same cache buster as display URL for consistency
+    const url = myImage.toURL()
+    const buster = item.value?.updated_at ? `t=${new Date(item.value.updated_at).getTime()}` : ''
+    const separator = url.includes('?') ? '&' : '?'
+    return `${url}${buster ? separator + buster : ''}`
   } catch (e) {
     console.error('Cloudinary rotation failed:', e)
-    return imgObj.url
+    return getDisplayUrl(imgObj)
   }
 }
 
@@ -172,7 +183,7 @@ function getImageStyle(image) {
 async function rotateImage(index, angle) {
   if (rotating.value) return
   
-  const currentRotation = item.value.images[index].rotation || 0
+  const currentRotation = Number(item.value.images[index].rotation) || 0
   const newRotation = (currentRotation + angle + 360) % 360
   
   rotating.value = true

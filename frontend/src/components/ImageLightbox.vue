@@ -39,11 +39,13 @@ const DOUBLE_TAP_THRESHOLD = 300
 let lastTapTime = 0
 
 // Current image
-const currentImage = computed(() => props.images[currentIndex.value])
+const currentItem = computed(() => props.images[currentIndex.value])
+const currentImage = computed(() => (typeof currentItem.value === 'string' ? currentItem.value : currentItem.value?.url))
+const currentRotation = computed(() => (typeof currentItem.value === 'string' ? 0 : currentItem.value?.rotation || 0))
 
 // Transform style
 const imageStyle = computed(() => ({
-  transform: `translate(${translateX.value}px, ${translateY.value}px) scale(${scale.value})`,
+  transform: `translate(${translateX.value}px, ${translateY.value}px) scale(${scale.value}) rotate(${currentRotation.value}deg)`,
   transition: isDragging.value ? 'none' : 'transform 0.2s ease-out'
 }))
 

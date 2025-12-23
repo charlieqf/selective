@@ -258,7 +258,6 @@ async function toggleNeedReview() {
             class="relative flex flex-col items-center justify-center p-4"
           >
             <img
-              :key="`${image.public_id}-${image.rotation || 0}`"
               :src="getRotatedUrl(image)"
               class="w-full h-auto object-contain max-h-96 transition-transform duration-300 cursor-pointer hover:opacity-90"
               :alt="`Question image ${index + 1}`"

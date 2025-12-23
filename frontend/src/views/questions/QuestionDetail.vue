@@ -21,9 +21,10 @@ const answerHistory = ref([])
 const loadingHistory = ref(false)
 const rotating = ref(false)
 
-// Lightbox state
+// Carousel and Lightbox state
 const showLightbox = ref(false)
 const lightboxIndex = ref(0)
+const currentIndex = ref(0)
 
 // Cloudinary instance
 const cld = new Cloudinary({
@@ -128,22 +129,37 @@ function handleAnswerSubmitted(result) {
 }
 
 function getRotatedUrl(image) {
-  if (!image?.public_id) return image?.url || ''
+  // Handle legacy string data or missing object
+  const imgObj = typeof image === 'string' ? { url: image, rotation: 0 } : image
+  if (!imgObj?.url) return ''
   
-  const rotation = image.rotation || 0
+  const rotation = Number(imgObj.rotation) || 0
+  const hasPublicId = !!imgObj.public_id
   
-  // If no rotation, return original URL with a cache buster
-  // This helps when rotating back to 0 so the browser doesn't show the old cached version
-  if (rotation === 0) {
+  // If no rotation OR no public_id, return original URL with a cache buster
+  if (rotation === 0 || !hasPublicId) {
     const buster = item.value?.updated_at ? `?t=${new Date(item.value.updated_at).getTime()}` : ''
-    return `${image.url}${buster}`
+    const separator = imgObj.url.includes('?') ? '&' : '?'
+    return `${imgObj.url}${buster ? separator + buster.slice(1) : ''}`
   }
   
   // Build Cloudinary URL with rotation
-  const myImage = cld.image(image.public_id)
-  myImage.rotate(byAngle(rotation))
-  
-  return myImage.toURL()
+  try {
+    const myImage = cld.image(imgObj.public_id)
+    myImage.rotate(byAngle(rotation))
+    return myImage.toURL()
+  } catch (e) {
+    console.error('Cloudinary rotation failed:', e)
+    return imgObj.url
+  }
+}
+
+function getImageStyle(image) {
+  const rotation = Number(typeof image === 'string' ? 0 : image.rotation) || 0
+  return {
+    transform: `rotate(${rotation}deg)`,
+    transition: 'transform 0.3s ease'
+  }
 }
 
 async function rotateImage(index, angle) {
@@ -244,41 +260,65 @@ async function toggleNeedReview() {
 
       <!-- Images -->
       <n-card title="Question Images" class="mb-6">
-        <n-carousel
-          v-if="item.images && item.images.length > 0"
-          show-arrow
-          draggable
-          :arrow-style="{ color: '#0f172a', backgroundColor: '#e2e8f0', boxShadow: '0 0 0 1px #94a3b8', opacity: 1 }"
-          arrow-placement="outer"
-          class="bg-gray-50 rounded-lg"
-        >
-          <div
-            v-for="(image, index) in item.images"
-            :key="index"
-            class="relative flex flex-col items-center justify-center p-4"
+        <div v-if="item.images && item.images.length > 0" class="flex flex-col items-center">
+          <n-carousel
+            v-model:index="currentIndex"
+            show-arrow
+            draggable
+            :loop="false"
+            :arrow-style="{ color: '#0f172a', backgroundColor: '#e2e8f0', boxShadow: '0 0 0 1px #94a3b8', opacity: 1 }"
+            arrow-placement="outer"
+            class="bg-gray-50 rounded-lg"
           >
-            <img
-              :src="getRotatedUrl(image)"
-              class="w-full h-auto object-contain max-h-96 transition-transform duration-300 cursor-pointer hover:opacity-90"
-              :alt="`Question image ${index + 1}`"
-              @click="openLightbox(index)"
-              data-testid="question-image"
-            />
-            <div class="mt-2 text-sm text-gray-600" data-testid="image-counter">
-              Image {{ index + 1 }} of {{ item.images.length }}
+            <div
+              v-for="(image, index) in item.images"
+              :key="index"
+              class="relative flex flex-col items-center justify-center p-4"
+            >
+              <img
+                :key="`${image.public_id}-${image.rotation || 0}`"
+                :src="getRotatedUrl(image)"
+                :style="getImageStyle(image)"
+                class="w-full h-auto object-contain max-h-96 cursor-pointer hover:opacity-90"
+                :alt="`Question image ${index + 1}`"
+                @click="openLightbox(index)"
+                data-testid="question-image"
+              />
+              <div class="mt-2 text-sm text-gray-600" data-testid="image-counter">
+                Image {{ index + 1 }} of {{ item.images.length }}
+              </div>
             </div>
-            
-            <!-- Rotation Controls -->
-            <div v-if="canEdit" class="mt-4 flex gap-2">
-              <n-button circle secondary @click.stop="rotateImage(index, -90)" :disabled="rotating" title="Rotate Left" data-testid="rotate-left-btn">
+          </n-carousel>
+
+          <!-- Rotation Controls (Outside Carousel for stability) -->
+          <div v-if="canEdit" class="mt-4 flex flex-col items-center gap-2">
+            <div class="flex gap-4">
+              <n-button 
+                secondary 
+                round
+                @click="rotateImage(currentIndex, -90)" 
+                :disabled="rotating" 
+                data-testid="rotate-left-btn"
+              >
                 <template #icon><n-icon><ArrowUndo /></n-icon></template>
+                Rotate Left
               </n-button>
-              <n-button circle secondary @click.stop="rotateImage(index, 90)" :disabled="rotating" title="Rotate Right" data-testid="rotate-right-btn">
+              <n-button 
+                secondary 
+                round
+                @click="rotateImage(currentIndex, 90)" 
+                :disabled="rotating" 
+                data-testid="rotate-right-btn"
+              >
                 <template #icon><n-icon><ArrowRedo /></n-icon></template>
+                Rotate Right
               </n-button>
+            </div>
+            <div class="text-xs text-gray-400">
+              Current Rotation: {{ item.images[currentIndex]?.rotation || 0 }}°
             </div>
           </div>
-        </n-carousel>
+        </div>
         <n-empty v-else description="No images available" />
       </n-card>
 

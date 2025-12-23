@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { getDisplayUrl, getImageStyle } from '../utils/image'
 
 const props = defineProps({
   item: { type: Object, required: true }
@@ -8,7 +9,7 @@ const props = defineProps({
 const emit = defineEmits(['click', 'tag-click'])
 
 const firstImage = computed(() => {
-  return props.item.images?.[0]?.url || null
+  return props.item.images?.[0] || null
 })
 
 const difficultyStars = computed(() => {
@@ -24,8 +25,13 @@ const statusColors = {
 
 <template>
   <div class="card cursor-pointer hover:shadow-lg transition-shadow" data-testid="question-card" @click="emit('click', props.item)">
-    <div v-if="firstImage" class="mb-3">
-      <img :src="firstImage" :alt="props.item.title || 'Question'" class="w-full h-48 object-cover rounded-md" />
+    <div v-if="firstImage" class="mb-3 overflow-hidden rounded-md h-48 bg-gray-50 flex items-center justify-center">
+      <img 
+        :src="getDisplayUrl(firstImage, props.item.updated_at)" 
+        :style="getImageStyle(firstImage)"
+        :alt="props.item.title || 'Question'" 
+        class="max-w-full max-h-full object-contain transition-transform duration-300" 
+      />
     </div>
     <div class="flex items-start justify-between mb-2">
       <span class="text-sm font-medium text-primary-600" data-testid="card-subject">{{ props.item.subject }}</span>

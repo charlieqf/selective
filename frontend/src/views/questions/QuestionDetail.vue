@@ -8,9 +8,8 @@ import LoadingSpinner from '../../components/LoadingSpinner.vue'
 import AnswerSection from '../../components/AnswerSection.vue'
 import ImageLightbox from '../../components/ImageLightbox.vue'
 import { NCard, NSpace, NTag, NButton, NCarousel, NEmpty, NIcon, useMessage } from 'naive-ui'
-import { Cloudinary } from '@cloudinary/url-gen'
-import { byAngle } from '@cloudinary/url-gen/actions/rotate'
 import { ArrowUndo, ArrowRedo, ArrowBack, Flag, Create, Trash, CheckmarkCircle, CloseCircle } from '@vicons/ionicons5'
+import { getDisplayUrl, getRotatedUrl, getImageStyle } from '../../utils/image'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,12 +25,6 @@ const showLightbox = ref(false)
 const lightboxIndex = ref(0)
 const currentIndex = ref(0)
 
-// Cloudinary instance
-const cld = new Cloudinary({
-  cloud: {
-    cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-  }
-})
 
 // Watch route param to reload when ID changes
 watch(
@@ -95,7 +88,7 @@ const canEdit = computed(() => {
 const lightboxImages = computed(() => {
   if (!item.value?.images) return []
   return item.value.images.map(image => ({
-    url: getDisplayUrl(image),
+    url: getDisplayUrl(image, item.value.updated_at),
     rotation: Number(typeof image === 'string' ? 0 : image.rotation) || 0
   }))
 })
@@ -132,53 +125,6 @@ function handleAnswerSubmitted(result) {
   fetchHistory(route.params.id)
 }
 
-// Get the stable base URL with cache buster for carousel display
-// Safely appends buster without stripping existing signed/required query params
-function getDisplayUrl(image) {
-  const imgObj = typeof image === 'string' ? { url: image } : image
-  if (!imgObj?.url) return ''
-  
-  if (!item.value?.updated_at) return imgObj.url
-  
-  const buster = `t=${new Date(item.value.updated_at).getTime()}`
-  const separator = imgObj.url.includes('?') ? '&' : '?'
-  return `${imgObj.url}${separator}${buster}`
-}
-
-// Get the Cloudinary rotated URL for full-screen/processed view
-function getRotatedUrl(image) {
-  const imgObj = typeof image === 'string' ? { url: image, rotation: 0 } : image
-  if (!imgObj?.url) return ''
-  
-  const rotation = Number(imgObj.rotation) || 0
-  const hasPublicId = !!imgObj.public_id
-  
-  // If no rotation OR no public_id, return display URL (base + buster)
-  if (rotation === 0 || !hasPublicId) {
-    return getDisplayUrl(imgObj)
-  }
-  
-  try {
-    const myImage = cld.image(imgObj.public_id)
-    myImage.rotate(byAngle(rotation))
-    // Add same cache buster as display URL for consistency
-    const url = myImage.toURL()
-    const buster = item.value?.updated_at ? `t=${new Date(item.value.updated_at).getTime()}` : ''
-    const separator = url.includes('?') ? '&' : '?'
-    return `${url}${buster ? separator + buster : ''}`
-  } catch (e) {
-    console.error('Cloudinary rotation failed:', e)
-    return getDisplayUrl(imgObj)
-  }
-}
-
-function getImageStyle(image) {
-  const rotation = Number(typeof image === 'string' ? 0 : image.rotation) || 0
-  return {
-    transform: `rotate(${rotation}deg)`,
-    transition: 'transform 0.3s ease'
-  }
-}
 
 async function rotateImage(index, angle) {
   if (rotating.value) return
@@ -295,7 +241,7 @@ async function toggleNeedReview() {
             >
               <img
                 :key="`${image.public_id || index}-${image.rotation || 0}`"
-                :src="getDisplayUrl(image)"
+                :src="getDisplayUrl(image, item.updated_at)"
                 :style="getImageStyle(image)"
                 class="w-full h-auto object-contain max-h-96 cursor-pointer hover:opacity-90"
                 :alt="`Question image ${index + 1}`"
